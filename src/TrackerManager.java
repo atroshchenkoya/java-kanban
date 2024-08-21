@@ -17,7 +17,7 @@ public class TrackerManager {
         return taskStorage.get(id);
     }
 
-    public void updateTaskInTaskStorage(Task task) {
+    public void updateTaskInTaskStorage(Task task) { //TODO: Если типы обновляемого и обновления не совпадают - логика усложнится
         taskStorage.put(task.getId(), task);
         if (task instanceof Epic) {
             setEpicStatus((Epic) task);
