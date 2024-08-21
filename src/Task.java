@@ -1,8 +1,8 @@
 public class Task {
 
     private int id;
-    private String name;
-    private String description;
+    final private String name;
+    final private String description;
     private TaskStatus taskStatus;
 
     public Task(int id, String name, String description, TaskStatus taskStatus) {
@@ -14,5 +14,13 @@ public class Task {
 
     public void setTaskStatus(TaskStatus taskStatus) {
         this.taskStatus = taskStatus;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }
