@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Epic extends Task {
 
@@ -8,6 +7,6 @@ public class Epic extends Task {
         super(id, name, description, taskStatus);
 
         if (subTasksId != null && !subTasksId.isEmpty())
-            this.subTasksId = (ArrayList<Integer>) subTasksId.clone();
+            this.subTasksId = new ArrayList<>(subTasksId);
     }
 }
