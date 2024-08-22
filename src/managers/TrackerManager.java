@@ -61,23 +61,24 @@ public class TrackerManager {
     public Epic getEpicById(int id) {
         return epicStorage.get(id);
     }
-    public void createTaskInTaskStorage(Task task) {
-        task.setId(idCounter);
+    public void createTaskInTaskStorage(Task incomingTask) {
+        Task taskToCreate = new Task(idCounter, incomingTask.getName(), incomingTask.getDescription(),
+                incomingTask.getTaskStatus());
         idCounter++;
-        taskStorage.put(task.getId(), task);
+        taskStorage.put(taskToCreate.getId(), taskToCreate);
     }
-    public void createSubTaskInSubTaskStorage(SubTask subTask) {
-        subTask.setId(idCounter);
+    public void createSubTaskInSubTaskStorage(SubTask incomingSubTask) {
+        SubTask subTaskToCreate = new SubTask(idCounter, incomingSubTask.getName(), incomingSubTask.getDescription(),
+                incomingSubTask.getTaskStatus(), incomingSubTask.getLinkedEpicId());
         idCounter++;
-        subTaskStorage.put(subTask.getId(), subTask);
-        epicStorage.get(subTask.getLinkedEpicId()).addSubTaskIdToSubTasksId(subTask.getId());
-        setEpicStatus(epicStorage.get(subTask.getLinkedEpicId()));
+        subTaskStorage.put(subTaskToCreate.getId(), subTaskToCreate);
+        epicStorage.get(subTaskToCreate.getLinkedEpicId()).addSubTaskIdToSubTasksId(subTaskToCreate.getId());
+        setEpicStatus(epicStorage.get(subTaskToCreate.getLinkedEpicId()));
     }
-    public void createEpicInEpicStorage(Epic epic) {
-        epic.setId(idCounter);
+    public void createEpicInEpicStorage(Epic incomingEpic) {
+        Epic epicToCreate = new Epic(idCounter, incomingEpic.getName(), incomingEpic.getDescription(), TaskStatus.NEW);
         idCounter++;
-        epic.setTaskStatus(TaskStatus.NEW);
-        epicStorage.put(epic.getId(), epic);
+        epicStorage.put(epicToCreate.getId(), epicToCreate);
     }
     public void updateTaskInTaskStorage(Task task) {
         taskStorage.put(task.getId(), task);
