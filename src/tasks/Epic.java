@@ -16,10 +16,11 @@ public class Epic extends Task {
         this.subTasksId.addAll(subTasksId);
 
     }
-
     public Epic(int id, String name, String description, TaskStatus taskStatus) {
         super(id, name, description, taskStatus);
-
-            this.subTasksId = new ArrayList<>();
+        this.subTasksId = new ArrayList<>();
+    }
+    public void clearSubTasksLinks() {
+        this.subTasksId.clear();
     }
 }
