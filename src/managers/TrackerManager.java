@@ -1,3 +1,10 @@
+package managers;
+
+import tasks.Epic;
+import tasks.SubTask;
+import tasks.Task;
+import tasks.TaskStatus;
+
 import java.util.HashMap;
 
 public class TrackerManager {
@@ -30,7 +37,7 @@ public class TrackerManager {
     private void setEpicStatusBySubTaskUpdated(SubTask subTask) {
         for (Task task: taskStorage.values()) {
             if (task instanceof Epic epic) {
-                if (epic.subTasksId.contains(subTask.getId())) {
+                if (epic.getSubTasksId().contains(subTask.getId())) {
                     setEpicStatus(epic);
                     return;
                 }
@@ -39,14 +46,14 @@ public class TrackerManager {
     }
 
     private void setEpicStatus(Epic epic) {
-        if (epic.subTasksId == null || epic.subTasksId.isEmpty()) {
+        if (epic.getSubTasksId() == null || epic.getSubTasksId().isEmpty()) {
             epic.setTaskStatus(TaskStatus.NEW);
             taskStorage.put(epic.getId(), epic);
             return;
         }
-        TaskStatus taskStatus = taskStorage.get(epic.subTasksId.get(0)).getTaskStatus();
-        for (int i = 1; i < epic.subTasksId.size(); i++) {
-            if (taskStatus != taskStorage.get(epic.subTasksId.get(i)).getTaskStatus()) {
+        TaskStatus taskStatus = taskStorage.get(epic.getSubTasksId().get(0)).getTaskStatus();
+        for (int i = 1; i < epic.getSubTasksId().size(); i++) {
+            if (taskStatus != taskStorage.get(epic.getSubTasksId().get(i)).getTaskStatus()) {
                 epic.setTaskStatus(TaskStatus.IN_PROGRESS);
                 taskStorage.put(epic.getId(), epic);
                 return;
@@ -77,8 +84,8 @@ public class TrackerManager {
         taskStorage.remove(subTask.getId());
         for (Task task: taskStorage.values()) {
             if (task instanceof Epic epic) {
-                if (epic.subTasksId.contains(subTask.getId())) {
-                    epic.subTasksId.removeIf(x -> x == subTask.getId());
+                if (epic.getSubTasksId().contains(subTask.getId())) {
+                    epic.getSubTasksId().removeIf(x -> x == subTask.getId());
                     setEpicStatus(epic);
                     return;
                 }
@@ -88,10 +95,10 @@ public class TrackerManager {
 
     public HashMap<Integer, SubTask> getAllSubTusksForEpic(Epic epic) {
         HashMap<Integer, SubTask> subTasksForEpic = new HashMap<>();
-        if (epic.subTasksId == null || epic.subTasksId.isEmpty())
+        if (epic.getSubTasksId() == null || epic.getSubTasksId().isEmpty())
             return subTasksForEpic;
 
-        epic.subTasksId.forEach(x ->
+        epic.getSubTasksId().forEach(x ->
             subTasksForEpic.put(x, (SubTask) taskStorage.get(x))
         );
 
