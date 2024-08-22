@@ -6,13 +6,14 @@ import tasks.Task;
 import tasks.TaskStatus;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class TrackerManager {
 
-    private final HashMap<Integer, Task> taskStorage = new HashMap<>();
+    private final Map<Integer, Task> taskStorage = new HashMap<>();
     private static int idCounter = 0;
 
-    public HashMap<Integer, Task> getTaskStorage() {
+    public Map<Integer, Task> getTaskStorage() {
         return taskStorage;
     }
 
