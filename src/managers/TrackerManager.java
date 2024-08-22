@@ -10,7 +10,7 @@ import java.util.HashMap;
 public class TrackerManager {
 
     private final HashMap<Integer, Task> taskStorage = new HashMap<>();
-    static int idCounter = 0;
+    private static int idCounter = 0;
 
     public HashMap<Integer, Task> getTaskStorage() {
         return taskStorage;

@@ -3,8 +3,8 @@ package tasks;
 public class Task {
 
     private int id;
-    final private String name;
-    final private String description;
+    private final String name;
+    private final String description;
     private TaskStatus taskStatus;
 
     public Task(int id, String name, String description, TaskStatus taskStatus) {
