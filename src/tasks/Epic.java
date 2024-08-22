@@ -14,7 +14,6 @@ public class Epic extends Task {
     public void setSubTasksId(ArrayList<Integer> subTasksId) {
         this.subTasksId.clear();
         this.subTasksId.addAll(subTasksId);
-
     }
     public Epic(int id, String name, String description, TaskStatus taskStatus) {
         super(id, name, description, taskStatus);
@@ -22,5 +21,11 @@ public class Epic extends Task {
     }
     public void clearSubTasksLinks() {
         this.subTasksId.clear();
+    }
+    public void addSubTaskIdToSubTasksId(int subTaskId) {
+        subTasksId.add(subTaskId);
+    }
+    public void removeSubTaskIdFromSubTasksId(int subTaskId) {
+        subTasksId.remove(subTaskId);
     }
 }

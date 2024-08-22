@@ -2,17 +2,17 @@ package tasks;
 
 public class SubTask extends Task {
 
-    private int epicId;
-    public SubTask(int id, String name, String description, TaskStatus taskStatus, int epicId) {
+    private int linkedEpicId;
+    public SubTask(int id, String name, String description, TaskStatus taskStatus, int linkedEpicId) {
         super(id, name, description, taskStatus);
-        this.epicId = epicId;
+        this.linkedEpicId = linkedEpicId;
     }
 
-    public int getEpicId() {
-        return epicId;
+    public int getLinkedEpicId() {
+        return linkedEpicId;
     }
 
-    public void setEpicId(int epicId) {
-        this.epicId = epicId;
+    public void setLinkedEpicId(int linkedEpicId) {
+        this.linkedEpicId = linkedEpicId;
     }
 }
