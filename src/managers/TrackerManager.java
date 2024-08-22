@@ -76,6 +76,7 @@ public class TrackerManager {
     public void createEpicInEpicStorage(Epic epic) {
         epic.setId(idCounter);
         idCounter++;
+        epic.setTaskStatus(TaskStatus.NEW);
         epicStorage.put(epic.getId(), epic);
     }
     public void updateTaskInTaskStorage(Task task) {
@@ -130,7 +131,7 @@ public class TrackerManager {
             epicStorage.put(epic.getId(), epic);
             return;
         }
-        TaskStatus taskStatus = epicStorage.get(epic.getSubTasksId().get(0)).getTaskStatus();
+        TaskStatus taskStatus = subTaskStorage.get(epic.getSubTasksId().get(0)).getTaskStatus();
         for (int i = 1; i < epic.getSubTasksId().size(); i++) {
             if (taskStatus != subTaskStorage.get(epic.getSubTasksId().get(i)).getTaskStatus()) {
                 epic.setTaskStatus(TaskStatus.IN_PROGRESS);
