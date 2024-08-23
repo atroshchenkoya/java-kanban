@@ -169,16 +169,20 @@ public class TrackerManager {
             epicStorage.put(epic.getId(), epic);
             return;
         }
-        int FirstSubTaskId = epic.getLinkedSubTask().get(0);
+
+        ArrayList<Integer> linkedSubTask = (ArrayList<Integer>) epic.getLinkedSubTask();
+        int FirstSubTaskId = linkedSubTask.get(0);
         TaskStatus FirstSubTaskStatus = subTaskStorage.get(FirstSubTaskId).getTaskStatus();
-        for (int i = 1; i < epic.getLinkedSubTask().size(); i++) {
-            int subTaskId = epic.getLinkedSubTask().get(i);
+
+        for (int i = 1; i < linkedSubTask.size(); i++) {
+            int subTaskId = linkedSubTask.get(i);
             if (FirstSubTaskStatus != subTaskStorage.get(subTaskId).getTaskStatus()) {
                 epic.setTaskStatus(TaskStatus.IN_PROGRESS);
                 epicStorage.put(epic.getId(), epic);
                 return;
             }
         }
+
         epic.setTaskStatus(FirstSubTaskStatus);
         epicStorage.put(epic.getId(), epic);
     }
