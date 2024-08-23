@@ -182,5 +182,4 @@ public class TrackerManager {
         epic.setTaskStatus(FirstSubTaskStatus);
         epicStorage.put(epic.getId(), epic);
     }
-
 }
