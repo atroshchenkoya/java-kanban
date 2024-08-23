@@ -11,6 +11,7 @@ public class Main {
     public static void main(String[] args) {
 
         TrackerManager trackerManager = new TrackerManager();
+        trackerManager.getAllTask();
 
         System.out.println("Поехали!");
 
@@ -21,40 +22,40 @@ public class Main {
         SubTask subtask2 = new SubTask(0, "Pop", "Pop", TaskStatus.DONE, 2); // 4
         Epic epic2 = new Epic(0, "Pop", "Pop", TaskStatus.IN_PROGRESS); // 5
         SubTask subtask3 = new SubTask(0, "Pop", "Pop", TaskStatus.NEW, 5); // 6
-        trackerManager.createTaskInTaskStorage(task1);
-        trackerManager.createTaskInTaskStorage(task2);
-        trackerManager.createEpicInEpicStorage(epic1);
-        trackerManager.createSubTaskInSubTaskStorage(subtask1);
-        trackerManager.createSubTaskInSubTaskStorage(subtask2);
-        trackerManager.createEpicInEpicStorage(epic2);
-        trackerManager.createSubTaskInSubTaskStorage(subtask3);
+        trackerManager.createTask(task1);
+        trackerManager.createTask(task2);
+        trackerManager.createEpic(epic1);
+        trackerManager.createSubTask(subtask1);
+        trackerManager.createSubTask(subtask2);
+        trackerManager.createEpic(epic2);
+        trackerManager.createSubTask(subtask3);
         Task task3 = new Task(0, "Popaaa", "Popaaa", TaskStatus.DONE);
         SubTask subTask4 = new SubTask(3, "Popdd", "Popdd", TaskStatus.DONE, 12);
 
-        List<SubTask> epicList = trackerManager.getAllSubTusksForEpicByEpic(epic1);
+        List<SubTask> epicList = trackerManager.getAllSubTask(epic1);
 
-        trackerManager.updateTaskInTaskStorage(task3);
-        trackerManager.updateSubTaskInSubTaskStorage(subTask4);
+        trackerManager.updateTask(task3);
+        trackerManager.updateSubTask(subTask4);
 
         Epic epic3 = new Epic(5, "Poeep", "Peeeop", TaskStatus.IN_PROGRESS);
-        trackerManager.updateEpicInEpicStorage(epic3);
+        trackerManager.updateEpic(epic3);
 
-        trackerManager.removeSubTaskFromSubTaskStorageById(3);
-        trackerManager.removeSubTaskFromSubTaskStorageById(4);
-        trackerManager.removeTaskFromTaskStorageById(0);
+        trackerManager.removeSubTask(3);
+        trackerManager.removeSubTask(4);
+        trackerManager.removeTask(0);
 
-        trackerManager.removeEpicFromEpicStorageById(2);
-        trackerManager.removeEpicFromEpicStorageById(5);
+        trackerManager.removeEpic(2);
+        trackerManager.removeEpic(5);
 
-        trackerManager.getTaskStorage();
-        trackerManager.getEpicStorage();
-        trackerManager.getSubTaskStorage();
-        trackerManager.getSubTaskById(3);
-        trackerManager.getEpicById(6);
-        trackerManager.getTaskById(0);
-        trackerManager.clearEpicStorage();
-        trackerManager.clearTaskStorage();
-        trackerManager.clearSubTuskStorage();
+        trackerManager.getAllTask();
+        trackerManager.getAllEpic();
+        trackerManager.getAllSubTask();
+        trackerManager.getSubTask(3);
+        trackerManager.getEpic(6);
+        trackerManager.getTask(0);
+        trackerManager.deleteAllEpic();
+        trackerManager.deleteAllTask();
+        trackerManager.deleteAllSubTask();
 
     }
 }

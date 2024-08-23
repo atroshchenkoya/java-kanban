@@ -17,130 +17,169 @@ public class TrackerManager {
     private final Map<Integer, Epic> epicStorage = new HashMap<>();
     private int idCounter = 0;
 
-    public List<Task> getTaskStorage() {
-        if (taskStorage.isEmpty()) {
-            return new ArrayList<>();
-        }
+    public List<Task> getAllTask() {
         return new ArrayList<>(taskStorage.values());
     }
-    public List<SubTask> getSubTaskStorage() {
-        if (subTaskStorage.isEmpty()) {
-            return new ArrayList<>();
-        }
+
+    public List<SubTask> getAllSubTask() {
         return new ArrayList<>(subTaskStorage.values());
     }
-    public List<Epic> getEpicStorage() {
-        if (epicStorage.isEmpty()) {
-            return new ArrayList<>();
-        }
+
+    public List<Epic> getAllEpic() {
         return new ArrayList<>(epicStorage.values());
     }
-    public void clearTaskStorage() {
+
+    public void deleteAllTask() {
         taskStorage.clear();
     }
-    public void clearSubTuskStorage() {
+
+    public void deleteAllSubTask() {
         subTaskStorage.clear();
-        if (epicStorage.isEmpty())
-            return;
-        for (Epic epic: epicStorage.values()) {
+        for (Epic epic : epicStorage.values()) {
             epic.setTaskStatus(TaskStatus.NEW);
-            epic.clearSubTasksLinks();
+            epic.unLinkAllSubTask();
         }
     }
-    public void clearEpicStorage() {
-        epicStorage.forEach((key, value) ->
-                value.getSubTasksId().forEach(subTaskStorage::remove));
+
+    public void deleteAllEpic() {
+        epicStorage.values().stream()
+                .flatMap(epic -> epic.getLinkedSubTask().stream())
+                .forEach(subTaskStorage::remove);
         epicStorage.clear();
     }
-    public Task getTaskById(int id) {
+
+    public Task getTask(int id) {
         return taskStorage.get(id);
     }
-    public SubTask getSubTaskById(int id) {
+
+    public SubTask getSubTask(int id) {
         return subTaskStorage.get(id);
     }
-    public Epic getEpicById(int id) {
+
+    public Epic getEpic(int id) {
         return epicStorage.get(id);
     }
-    public void createTaskInTaskStorage(Task incomingTask) {
-        Task taskToCreate = new Task(idCounter, incomingTask.getName(), incomingTask.getDescription(),
-                incomingTask.getTaskStatus());
+
+    public void createTask(Task incomingTask) {
+
+        Task taskToCreate = new Task(
+                idCounter,
+                incomingTask.getName(),
+                incomingTask.getDescription(),
+                incomingTask.getTaskStatus()
+        );
+
         idCounter++;
         taskStorage.put(taskToCreate.getId(), taskToCreate);
     }
-    public void createSubTaskInSubTaskStorage(SubTask incomingSubTask) {
-        SubTask subTaskToCreate = new SubTask(idCounter, incomingSubTask.getName(), incomingSubTask.getDescription(),
-                incomingSubTask.getTaskStatus(), incomingSubTask.getLinkedEpicId());
+
+    public void createSubTask(SubTask incomingSubTask) {
+
+        SubTask subTaskToCreate = new SubTask(
+                idCounter,
+                incomingSubTask.getName(),
+                incomingSubTask.getDescription(),
+                incomingSubTask.getTaskStatus(),
+                incomingSubTask.getLinkedEpicId()
+        );
+
         idCounter++;
         subTaskStorage.put(subTaskToCreate.getId(), subTaskToCreate);
-        epicStorage.get(subTaskToCreate.getLinkedEpicId()).addSubTaskIdToSubTasksId(subTaskToCreate.getId());
-        setEpicStatus(epicStorage.get(subTaskToCreate.getLinkedEpicId()));
+        int epicId = subTaskToCreate.getLinkedEpicId();
+        Epic epic = epicStorage.get(epicId);
+        epic.linkSubTask(subTaskToCreate.getId());
+        setEpicStatus(epic);
     }
-    public void createEpicInEpicStorage(Epic incomingEpic) {
-        Epic epicToCreate = new Epic(idCounter, incomingEpic.getName(), incomingEpic.getDescription(), TaskStatus.NEW);
+
+    public void createEpic(Epic incomingEpic) {
+
+        Epic epicToCreate = new Epic(
+                idCounter,
+                incomingEpic.getName(),
+                incomingEpic.getDescription(),
+                TaskStatus.NEW
+        );
+
         idCounter++;
         epicStorage.put(epicToCreate.getId(), epicToCreate);
     }
-    public void updateTaskInTaskStorage(Task task) {
+
+    public void updateTask(Task task) {
         taskStorage.put(task.getId(), task);
     }
-    public void updateEpicInEpicStorage(Epic incomingEpic) {
 
-        Epic forUpdateEpic = new Epic(incomingEpic.getId(),
+    public void updateEpic(Epic incomingEpic) {
+
+        Epic forUpdateEpic = new Epic(
+                incomingEpic.getId(),
                 incomingEpic.getName(),
                 incomingEpic.getDescription(),
-                TaskStatus.NEW);
+                TaskStatus.NEW
+        );
 
-        forUpdateEpic.setSubTasksId((ArrayList<Integer>) epicStorage.get(incomingEpic.getId()).getSubTasksId());
+        forUpdateEpic.linkSubTask((ArrayList<Integer>) epicStorage.get(incomingEpic.getId()).getLinkedSubTask());
         epicStorage.put(forUpdateEpic.getId(), forUpdateEpic);
         setEpicStatus(forUpdateEpic);
     }
-    public void updateSubTaskInSubTaskStorage(SubTask subTask) {
+
+    public void updateSubTask(SubTask subTask) {
 
         SubTask forUpdateSubTask = new SubTask(
                 subTask.getId(),
                 subTask.getName(),
                 subTask.getDescription(),
                 subTask.getTaskStatus(),
-                subTaskStorage.get(subTask.getId()).getLinkedEpicId());
+                subTaskStorage.get(subTask.getId()).getLinkedEpicId()
+        );
 
         subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
-        setEpicStatus(epicStorage.get(forUpdateSubTask.getLinkedEpicId()));
+        int epicId = forUpdateSubTask.getLinkedEpicId();
+        Epic epic = epicStorage.get(epicId);
+        setEpicStatus(epic);
     }
-    public void removeTaskFromTaskStorageById(int id) {
+
+    public void removeTask(int id) {
         taskStorage.remove(id);
     }
-    public void removeSubTaskFromSubTaskStorageById(int id) {
-        epicStorage.get(subTaskStorage.get(id).getLinkedEpicId()).removeSubTaskIdFromSubTasksId(id);
-        setEpicStatus(epicStorage.get(subTaskStorage.get(id).getLinkedEpicId()));
+
+    public void removeSubTask(int id) {
+        int epicId = subTaskStorage.get(id).getLinkedEpicId();
+        Epic linkedEpic = epicStorage.get(epicId);
+        linkedEpic.unLinkSubTask(id);
+        setEpicStatus(linkedEpic);
         subTaskStorage.remove(id);
     }
-    public void removeEpicFromEpicStorageById(int id) {
-        epicStorage.get(id).getSubTasksId().forEach(subTaskStorage::remove);
+
+    public void removeEpic(int id) {
+        epicStorage.get(id).getLinkedSubTask().forEach(subTaskStorage::remove);
         epicStorage.remove(id);
     }
-    public List<SubTask> getAllSubTusksForEpicByEpic(Epic epic) {
+
+    public List<SubTask> getAllSubTask(Epic epic) {
         ArrayList<SubTask> subTasksForEpic = new ArrayList<>();
-        if (epic.getSubTasksId() == null || epic.getSubTasksId().isEmpty())
+        if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty())
             return subTasksForEpic;
-        epic.getSubTasksId().forEach(x -> subTasksForEpic.add(subTaskStorage.get(x)));
+        epic.getLinkedSubTask().forEach(x -> subTasksForEpic.add(subTaskStorage.get(x)));
         return subTasksForEpic;
     }
 
     private void setEpicStatus(Epic epic) {
-        if (epic.getSubTasksId() == null || epic.getSubTasksId().isEmpty()) {
+        if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty()) {
             epic.setTaskStatus(TaskStatus.NEW);
             epicStorage.put(epic.getId(), epic);
             return;
         }
-        TaskStatus taskStatus = subTaskStorage.get(epic.getSubTasksId().get(0)).getTaskStatus();
-        for (int i = 1; i < epic.getSubTasksId().size(); i++) {
-            if (taskStatus != subTaskStorage.get(epic.getSubTasksId().get(i)).getTaskStatus()) {
+        int FirstSubTaskId = epic.getLinkedSubTask().get(0);
+        TaskStatus FirstSubTaskStatus = subTaskStorage.get(FirstSubTaskId).getTaskStatus();
+        for (int i = 1; i < epic.getLinkedSubTask().size(); i++) {
+            int subTaskId = epic.getLinkedSubTask().get(i);
+            if (FirstSubTaskStatus != subTaskStorage.get(subTaskId).getTaskStatus()) {
                 epic.setTaskStatus(TaskStatus.IN_PROGRESS);
                 epicStorage.put(epic.getId(), epic);
                 return;
             }
         }
-        epic.setTaskStatus(taskStatus);
+        epic.setTaskStatus(FirstSubTaskStatus);
         epicStorage.put(epic.getId(), epic);
     }
 

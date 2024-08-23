@@ -5,27 +5,31 @@ import java.util.List;
 
 public class Epic extends Task {
 
-    private final List<Integer> subTasksId;
+    private final List<Integer> linkedSubTask;
 
-    public List<Integer> getSubTasksId() {
-        return subTasksId;
+    public List<Integer> getLinkedSubTask() {
+        return linkedSubTask;
     }
 
-    public void setSubTasksId(ArrayList<Integer> subTasksId) {
-        this.subTasksId.clear();
-        this.subTasksId.addAll(subTasksId);
+    public void linkSubTask(ArrayList<Integer> subTasksId) {
+        this.linkedSubTask.clear();
+        this.linkedSubTask.addAll(subTasksId);
     }
+
     public Epic(int id, String name, String description, TaskStatus taskStatus) {
         super(id, name, description, taskStatus);
-        this.subTasksId = new ArrayList<>();
+        this.linkedSubTask = new ArrayList<>();
     }
-    public void clearSubTasksLinks() {
-        this.subTasksId.clear();
+
+    public void unLinkAllSubTask() {
+        this.linkedSubTask.clear();
     }
-    public void addSubTaskIdToSubTasksId(int subTaskId) {
-        subTasksId.add(subTaskId);
+
+    public void linkSubTask(int subTaskId) {
+        linkedSubTask.add(subTaskId);
     }
-    public void removeSubTaskIdFromSubTasksId(int subTaskId) {
-        subTasksId.removeIf(x -> x == subTaskId);
+
+    public void unLinkSubTask(int subTaskId) {
+        linkedSubTask.removeIf(x -> x == subTaskId);
     }
 }

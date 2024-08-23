@@ -13,6 +13,7 @@ public class Task {
         this.description = description;
         this.taskStatus = taskStatus;
     }
+
     public void setTaskStatus(TaskStatus taskStatus) {
         this.taskStatus = taskStatus;
     }
