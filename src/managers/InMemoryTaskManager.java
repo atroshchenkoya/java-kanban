@@ -190,9 +190,10 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<SubTask> getAllSubTask(Epic epic) {
         ArrayList<SubTask> subTasksForEpic = new ArrayList<>();
-        if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty())
+        Epic storagedEpic = epicStorage.get(epic.getId());
+        if (storagedEpic.getLinkedSubTask() == null || storagedEpic.getLinkedSubTask().isEmpty())
             return subTasksForEpic;
-        epic.getLinkedSubTask().forEach(x -> subTasksForEpic.add(subTaskStorage.get(x)));
+        storagedEpic.getLinkedSubTask().forEach(x -> subTasksForEpic.add(subTaskStorage.get(x)));
         return subTasksForEpic;
     }
 

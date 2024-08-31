@@ -33,4 +33,17 @@ public class Task {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Task task)) {
+            return false;
+        }
+        if (this.getClass() != o.getClass())
+            return false;
+        return this.id == task.id;
+    }
 }
