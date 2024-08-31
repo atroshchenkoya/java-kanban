@@ -1,4 +1,4 @@
-package tasks;
+package entity;
 
 public class Task {
 

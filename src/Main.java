@@ -1,8 +1,9 @@
-import managers.TrackerManager;
-import tasks.SubTask;
-import tasks.Task;
-import tasks.Epic;
-import tasks.TaskStatus;
+import interfaces.TaskManager;
+import entity.SubTask;
+import entity.Task;
+import entity.Epic;
+import entity.TaskStatus;
+import managers.Managers;
 
 import java.util.List;
 
@@ -10,8 +11,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        TrackerManager trackerManager = new TrackerManager();
-        trackerManager.getAllTask();
+        TaskManager inMemoryTaskManager = Managers.getDefault();
+        inMemoryTaskManager.getAllTask();
 
         System.out.println("Поехали!");
 
@@ -22,40 +23,42 @@ public class Main {
         SubTask subtask2 = new SubTask(0, "Pop", "Pop", TaskStatus.DONE, 2); // 4
         Epic epic2 = new Epic(0, "Pop", "Pop", TaskStatus.IN_PROGRESS); // 5
         SubTask subtask3 = new SubTask(0, "Pop", "Pop", TaskStatus.NEW, 5); // 6
-        trackerManager.createTask(task1);
-        trackerManager.createTask(task2);
-        trackerManager.createEpic(epic1);
-        trackerManager.createSubTask(subtask1);
-        trackerManager.createSubTask(subtask2);
-        trackerManager.createEpic(epic2);
-        trackerManager.createSubTask(subtask3);
+        inMemoryTaskManager.createTask(task1);
+        inMemoryTaskManager.createTask(task2);
+        inMemoryTaskManager.createEpic(epic1);
+        inMemoryTaskManager.createSubTask(subtask1);
+        inMemoryTaskManager.createSubTask(subtask2);
+        inMemoryTaskManager.createEpic(epic2);
+        inMemoryTaskManager.createSubTask(subtask3);
         Task task3 = new Task(0, "Popaaa", "Popaaa", TaskStatus.DONE);
         SubTask subTask4 = new SubTask(3, "Popdd", "Popdd", TaskStatus.DONE, 12);
 
-        List<SubTask> epicList = trackerManager.getAllSubTask(epic1);
+        List<SubTask> epicList = inMemoryTaskManager.getAllSubTask(epic1);
 
-        trackerManager.updateTask(task3);
-        trackerManager.updateSubTask(subTask4);
+        inMemoryTaskManager.updateTask(task3);
+        inMemoryTaskManager.updateSubTask(subTask4);
 
         Epic epic3 = new Epic(5, "Poeep", "Peeeop", TaskStatus.IN_PROGRESS);
-        trackerManager.updateEpic(epic3);
+        inMemoryTaskManager.updateEpic(epic3);
 
-        trackerManager.removeSubTask(3);
-        trackerManager.removeSubTask(4);
-        trackerManager.removeTask(0);
+        inMemoryTaskManager.removeSubTask(3);
+        inMemoryTaskManager.removeSubTask(4);
+        inMemoryTaskManager.removeTask(0);
 
-        trackerManager.removeEpic(2);
-        trackerManager.removeEpic(5);
+        inMemoryTaskManager.removeEpic(2);
+        inMemoryTaskManager.removeEpic(5);
 
-        trackerManager.getAllTask();
-        trackerManager.getAllEpic();
-        trackerManager.getAllSubTask();
-        trackerManager.getSubTask(3);
-        trackerManager.getEpic(6);
-        trackerManager.getTask(0);
-        trackerManager.deleteAllEpic();
-        trackerManager.deleteAllTask();
-        trackerManager.deleteAllSubTask();
+        inMemoryTaskManager.getAllTask();
+
+        inMemoryTaskManager.getAllEpic();
+        inMemoryTaskManager.getAllSubTask();
+        inMemoryTaskManager.getSubTask(3);
+        inMemoryTaskManager.getEpic(6);
+        inMemoryTaskManager.getTask(0);
+        List<Task> t = inMemoryTaskManager.getHistory();
+        inMemoryTaskManager.deleteAllEpic();
+        inMemoryTaskManager.deleteAllTask();
+        inMemoryTaskManager.deleteAllSubTask();
 
     }
 }
