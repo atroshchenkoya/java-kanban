@@ -7,6 +7,10 @@ import entity.TaskStatus;
 import interfaces.TaskManager;
 import managers.Managers;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TaskManagerTest {
@@ -49,4 +53,27 @@ class TaskManagerTest {
         assertEquals(taskManager.getSubTask(1), subTask);
     }
 
+    @Test
+    void historyHasAllGotByIdItems() {
+        Epic epic2 = new Epic(0, "Pop2", "Pop3", TaskStatus.IN_PROGRESS);
+        Epic epic3 = new Epic(1, "Pop2", "Pop4", TaskStatus.IN_PROGRESS);
+        SubTask subTask1 = new SubTask(2, "Pop", "Pop", TaskStatus.IN_PROGRESS, 0);
+        SubTask subTask2 = new SubTask(3, "Pop", "Pop", TaskStatus.IN_PROGRESS, 0);
+        taskManager.createEpic(epic2);
+        taskManager.createEpic(epic3);
+        taskManager.createSubTask(subTask1);
+        taskManager.createSubTask(subTask2);
+        taskManager.getEpic(0);
+        taskManager.getEpic(0);
+        taskManager.getEpic(1);
+        taskManager.getSubTask(2);
+        taskManager.getSubTask(3);
+        List<Task> gotTasks = new ArrayList<>();
+        gotTasks.add(epic2);
+        gotTasks.add(epic3);
+        gotTasks.add(subTask1);
+        gotTasks.add(subTask2);
+        assertTrue(taskManager.getHistory().containsAll(gotTasks));
+        assertEquals(taskManager.getHistory().getLast(), subTask2);
+    }
 }
