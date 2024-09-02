@@ -1,16 +1,29 @@
 package test;
 
+import entity.Task;
+import interfaces.TaskManager;
 import managers.Managers;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ManagersTest {
     @Test
     void checkInitializationOfTaskManager() {
-        assertNotNull(Managers.getDefault());
+        TaskManager taskManager;
+
+        taskManager = Managers.getDefault();
+
+        assertNotNull(taskManager);
     }
     @Test
-    void checkInitializationOfHistoryManager() {
-        assertNotNull(Managers.getDefault().getHistory());
+    void checkInitializationOfHistoryManagerByGettingHistory() {
+        List<Task> historyTasks;
+
+        historyTasks = Managers.getDefault().getHistory();
+
+        assertNotNull(historyTasks);
     }
 }

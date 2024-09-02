@@ -11,6 +11,7 @@ public class EpicTest {
     void epicsWithEqualIdShouldBeEqual() {
         Epic task1 = new Epic(0, "Pop", "Pop", TaskStatus.IN_PROGRESS);
         Epic task2 = new Epic(0, "Dop", "Gop", TaskStatus.DONE);
+
         assertEquals(task1, task2);
     }
 }
