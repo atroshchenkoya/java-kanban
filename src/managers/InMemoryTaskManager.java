@@ -145,7 +145,7 @@ public class InMemoryTaskManager implements TaskManager {
                 TaskStatus.NEW
         );
 
-        forUpdateEpic.linkSubTask((ArrayList<Integer>) epicStorage.get(incomingEpic.getId()).getLinkedSubTask());
+        forUpdateEpic.linkSubTask(epicStorage.get(incomingEpic.getId()).getLinkedSubTask());
         epicStorage.put(forUpdateEpic.getId(), forUpdateEpic);
         setEpicStatus(forUpdateEpic);
     }
@@ -189,7 +189,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<SubTask> getAllSubTask(Epic epic) {
-        ArrayList<SubTask> subTasksForEpic = new ArrayList<>();
+        List<SubTask> subTasksForEpic = new ArrayList<>();
         Epic storagedEpic = epicStorage.get(epic.getId());
         if (storagedEpic.getLinkedSubTask() == null || storagedEpic.getLinkedSubTask().isEmpty())
             return subTasksForEpic;
@@ -209,7 +209,7 @@ public class InMemoryTaskManager implements TaskManager {
             return;
         }
 
-        ArrayList<Integer> linkedSubTask = (ArrayList<Integer>) epic.getLinkedSubTask();
+        List<Integer> linkedSubTask = epic.getLinkedSubTask();
         int firstSubTaskId = linkedSubTask.get(0);
         TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
 

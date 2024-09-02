@@ -11,7 +11,7 @@ public class Epic extends Task {
         return linkedSubTask;
     }
 
-    public void linkSubTask(ArrayList<Integer> subTasksId) {
+    public void linkSubTask(List<Integer> subTasksId) {
         this.linkedSubTask.clear();
         this.linkedSubTask.addAll(subTasksId);
     }
