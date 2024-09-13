@@ -1,5 +1,3 @@
-package test;
-
 import entity.SubTask;
 import entity.TaskStatus;
 import org.junit.jupiter.api.Test;

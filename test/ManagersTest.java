@@ -1,5 +1,3 @@
-package test;
-
 import entity.Task;
 import interfaces.TaskManager;
 import managers.Managers;
