@@ -1,6 +1,7 @@
+package managers;
+
 import entity.Task;
 import interfaces.TaskManager;
-import managers.Managers;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

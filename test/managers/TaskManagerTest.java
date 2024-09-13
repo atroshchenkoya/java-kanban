@@ -1,9 +1,10 @@
+package managers;
+
 import entity.Epic;
 import entity.SubTask;
 import entity.Task;
 import entity.TaskStatus;
 import interfaces.TaskManager;
-import managers.Managers;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
