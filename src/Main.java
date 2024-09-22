@@ -41,20 +41,23 @@ public class Main {
         Epic epic3 = new Epic(5, "Poeep", "Peeeop", TaskStatus.IN_PROGRESS);
         inMemoryTaskManager.updateEpic(epic3);
 
-        inMemoryTaskManager.removeSubTask(3);
-        inMemoryTaskManager.removeSubTask(4);
-        inMemoryTaskManager.removeTask(0);
+        //inMemoryTaskManager.removeSubTask(3);
+        //inMemoryTaskManager.removeSubTask(4);
+        //inMemoryTaskManager.removeTask(0);
 
-        inMemoryTaskManager.removeEpic(2);
-        inMemoryTaskManager.removeEpic(5);
+        //inMemoryTaskManager.removeEpic(2);
+        //inMemoryTaskManager.removeEpic(5);
 
         inMemoryTaskManager.getAllTask();
 
         inMemoryTaskManager.getAllEpic();
         inMemoryTaskManager.getAllSubTask();
         inMemoryTaskManager.getSubTask(3);
-        inMemoryTaskManager.getEpic(6);
+        //inMemoryTaskManager.getEpic(6);
+        inMemoryTaskManager.getEpic(2);
+        inMemoryTaskManager.getEpic(5);
         inMemoryTaskManager.getTask(0);
+        inMemoryTaskManager.getEpic(5);
         List<Task> t = inMemoryTaskManager.getHistory();
         inMemoryTaskManager.deleteAllEpic();
         inMemoryTaskManager.deleteAllTask();
