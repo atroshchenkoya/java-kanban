@@ -72,7 +72,7 @@ class TaskManagerTest {
     }
 
     @Test
-    void historyHasAllGotByIdItems() {
+    void historyHasAllGotByIdItemsAndThereIsNoDuplicates() {
         Epic epic2 = new Epic(0, "Pop2", "Pop3", TaskStatus.IN_PROGRESS);
         Epic epic3 = new Epic(1, "Pop2", "Pop4", TaskStatus.IN_PROGRESS);
         SubTask subTask1 = new SubTask(2, "Pop", "Pop", TaskStatus.IN_PROGRESS, 0);
@@ -95,5 +95,6 @@ class TaskManagerTest {
 
         assertTrue(taskManager.getHistory().containsAll(gotTasks));
         assertEquals(taskManager.getHistory().getLast(), subTask2);
+        assertEquals(taskManager.getHistory().size(), 4);
     }
 }
