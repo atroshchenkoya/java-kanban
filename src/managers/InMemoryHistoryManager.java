@@ -1,9 +1,9 @@
 package managers;
 
-import entity.util.CustomLinkedList;
-import entity.util.CustomNode;
 import entity.Task;
+import entity.util.CustomNode;
 import interfaces.HistoryManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +17,7 @@ public class InMemoryHistoryManager implements HistoryManager {
     @Override
     public void addTask(Task task) {
         if (historyMap.containsKey(task)) {
-            historyList.remove(historyMap.get(task));
+            historyList.remove(task);
             historyMap.put(task, historyList.linkLast(task));
             return;
         }
@@ -27,19 +27,70 @@ public class InMemoryHistoryManager implements HistoryManager {
     @Override
     public List<Task> getHistory() {
 
-        if (historyList.getHead() == null) {
-            return new ArrayList<>();
-        }
-
         List<Task> viewedTasks = new ArrayList<>();
         CustomNode node = historyList.getHead();
 
-        while (true) {
+        while (node != null) {
             viewedTasks.add(node.getTask());
-            if (node.getNextNode() == null)
-                break;
             node = node.getNextNode();
         }
+
         return viewedTasks;
+    }
+
+    @Override
+    public void removeTask(Task task) {
+        if (historyMap.containsKey(task)) {
+            historyList.remove(task);
+            historyMap.remove(task);
+        }
+    }
+
+    public class CustomLinkedList {
+        CustomNode head;
+        CustomNode last;
+
+        public CustomNode linkLast(Task task) {
+
+            CustomNode node = new CustomNode(task);
+
+            if (head == null) {
+                this.head = node;
+                this.last = node;
+                return node;
+            }
+
+            last.setNextNode(node);
+            node.setPrevNode(last);
+            this.last = node;
+            return node;
+        }
+
+        public void remove(Task task) {
+
+            CustomNode node = historyMap.get(task);
+
+            if (head == last && head == node) {
+                head = null;
+                last = null;
+                return;
+            }
+            if (head == node) {
+                head = head.getNextNode();
+                head.setPrevNode(null);
+                return;
+            }
+            if (last == node) {
+                last = last.getPrevNode();
+                last.setNextNode(null);
+                return;
+            }
+            node.getPrevNode().setNextNode(node.getNextNode());
+            node.getNextNode().setPrevNode(node.getPrevNode());
+        }
+
+        public CustomNode getHead() {
+            return head;
+        }
     }
 }
