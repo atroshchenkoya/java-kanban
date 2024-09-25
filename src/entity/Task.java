@@ -1,5 +1,7 @@
 package entity;
 
+import java.util.Objects;
+
 public class Task {
 
     private final int id;
@@ -45,5 +47,10 @@ public class Task {
         if (this.getClass() != o.getClass())
             return false;
         return this.id == task.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

@@ -1,23 +1,96 @@
 package managers;
 
 import entity.Task;
+import entity.util.CustomNode;
 import interfaces.HistoryManager;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
 
-    private final List<Task> history = new ArrayList<>();
+    private final Map<Task, CustomNode> historyMap = new HashMap<>();
+    private final CustomLinkedList historyList = new CustomLinkedList();
 
     @Override
     public void addTask(Task task) {
-        if (history.size() >= 10)
-            history.remove(0);
-        history.add(task);
+        if (historyMap.containsKey(task)) {
+            historyList.remove(task);
+            historyMap.put(task, historyList.linkLast(task));
+            return;
+        }
+        historyMap.put(task, historyList.linkLast(task));
     }
 
     @Override
     public List<Task> getHistory() {
-        return new ArrayList<>(history);
+
+        List<Task> viewedTasks = new ArrayList<>();
+        CustomNode node = historyList.getHead();
+
+        while (node != null) {
+            viewedTasks.add(node.getTask());
+            node = node.getNextNode();
+        }
+
+        return viewedTasks;
+    }
+
+    @Override
+    public void removeTask(Task task) {
+        if (historyMap.containsKey(task)) {
+            historyList.remove(task);
+            historyMap.remove(task);
+        }
+    }
+
+    public class CustomLinkedList {
+        CustomNode head;
+        CustomNode last;
+
+        public CustomNode linkLast(Task task) {
+
+            CustomNode node = new CustomNode(task);
+
+            if (head == null) {
+                this.head = node;
+                this.last = node;
+                return node;
+            }
+
+            last.setNextNode(node);
+            node.setPrevNode(last);
+            this.last = node;
+            return node;
+        }
+
+        public void remove(Task task) {
+
+            CustomNode node = historyMap.get(task);
+
+            if (head == last && head == node) {
+                head = null;
+                last = null;
+                return;
+            }
+            if (head == node) {
+                head = head.getNextNode();
+                head.setPrevNode(null);
+                return;
+            }
+            if (last == node) {
+                last = last.getPrevNode();
+                last.setNextNode(null);
+                return;
+            }
+            node.getPrevNode().setNextNode(node.getNextNode());
+            node.getNextNode().setPrevNode(node.getPrevNode());
+        }
+
+        public CustomNode getHead() {
+            return head;
+        }
     }
 }
