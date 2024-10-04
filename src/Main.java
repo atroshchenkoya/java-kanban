@@ -3,7 +3,7 @@ import entity.SubTask;
 import entity.Task;
 import entity.Epic;
 import entity.TaskStatus;
-import managers.Managers;
+import managers.FileBackedTaskManager;
 
 import java.util.List;
 
@@ -11,7 +11,10 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        TaskManager inMemoryTaskManager = Managers.getDefault();
+        String fileLocation = "C:\\test\\test.csv";
+        TaskManager inMemoryTaskManager = new FileBackedTaskManager(fileLocation);
+
+//        TaskManager inMemoryTaskManager = Managers.getDefault();
         inMemoryTaskManager.getAllTask();
 
         System.out.println("Поехали!");
