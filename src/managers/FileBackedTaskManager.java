@@ -5,11 +5,14 @@ import entity.SubTask;
 import entity.Task;
 import entity.TaskStatus;
 import entity.TaskType;
+import exceptions.ManagerLoadFromFileException;
+import exceptions.ManagerSaveToFileException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -17,6 +20,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
 
@@ -26,6 +30,15 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         super();
         this.fileLocation = fileLocation;
         loadFromFile();
+        setCounterAfterLoadingFromFile();
+    }
+
+    private void setCounterAfterLoadingFromFile() {
+        this.idCounter = Stream.of(
+                taskStorage.keySet().stream().max(Integer::compareTo).orElse(0),
+                epicStorage.keySet().stream().max(Integer::compareTo).orElse(0),
+                subTaskStorage.keySet().stream().max(Integer::compareTo).orElse(0)
+        ).max(Integer::compareTo).orElse(0) + 1;
     }
 
     private void loadFromFile() {
@@ -40,8 +53,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 loadInMemory(element);
             }
             linkLoadedSubTasksToTheirEpics();
-        } catch (Throwable throwable) {
-            System.out.println("WWO");
+        } catch (IOException e) {
+            throw new ManagerLoadFromFileException(e);
         }
     }
 
@@ -99,8 +112,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 writer.newLine();
             }
 
-        } catch (Throwable throwable) {
-            System.out.println("WWO");
+        } catch (IOException e) {
+            throw new ManagerSaveToFileException(e);
         }
     }
 

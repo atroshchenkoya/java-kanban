@@ -2,6 +2,7 @@ package managers;
 
 import entity.Task;
 import entity.TaskStatus;
+import interfaces.HistoryManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InMemoryHistoryManagerTest {
-    InMemoryHistoryManager inMemoryHistoryManager = new InMemoryHistoryManager();
+    HistoryManager inMemoryHistoryManager = new InMemoryHistoryManager();
 
     @Test
     void addFistTaskToHistoryWhenHistoryIsEmptyShouldBeOk() {
