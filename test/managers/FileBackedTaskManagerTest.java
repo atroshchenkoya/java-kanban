@@ -7,6 +7,7 @@ import entity.TaskStatus;
 import exceptions.ManagerLoadFromFileException;
 import exceptions.ManagerSaveToFileException;
 import interfaces.TaskManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,12 +39,20 @@ public class FileBackedTaskManagerTest {
     @BeforeEach
     void beforeEach() {
         try {
-            tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".temp", new File("C:\\test\\"));
+            //tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".temp", new File("C:\\test\\"));
+            tmpFile = Files.createTempFile(UUID.randomUUID().toString(), ".temp").toFile();
             fileCanonicalPath = tmpFile.getCanonicalPath();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         fileBackedTaskManager = new FileBackedTaskManager(fileCanonicalPath);
+    }
+
+    @AfterEach
+    void afterEach() {
+        if (!tmpFile.delete()) {
+            throw new ManagerLoadFromFileException(new Throwable("Something goes wrong"));
+        }
     }
 
     @Test
