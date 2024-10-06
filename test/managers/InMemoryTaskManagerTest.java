@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TaskManagerTest {
+class InMemoryTaskManagerTest {
 
     private final TaskManager taskManager = Managers.getDefault();
 
