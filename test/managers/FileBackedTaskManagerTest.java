@@ -24,7 +24,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,8 +39,8 @@ public class FileBackedTaskManagerTest {
     @BeforeEach
     void beforeEach() {
         try {
-            //tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".temp", new File("C:\\test\\"));
-            tmpFile = Files.createTempFile(UUID.randomUUID().toString(), ".temp").toFile();
+            //tmpFile = File.createTempFile(UUID.randomUUID().toString(), ".tmp", new File("C:\\test\\"));
+            tmpFile = Files.createTempFile(UUID.randomUUID().toString(), ".tmp").toFile();
             fileCanonicalPath = tmpFile.getCanonicalPath();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -62,23 +62,23 @@ public class FileBackedTaskManagerTest {
         fileBackedTaskManager.createTask(task1);
         fileBackedTaskManager.removeTask(task1.getId());
 
-        String a = "";
-        String b = "";
+        String firstRowFromFile = "";
+        String lastRowFromFile = "";
         try (InputStream inputStream = new FileInputStream(fileCanonicalPath);
              InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
              BufferedReader reader = new BufferedReader(streamReader)) {
             while (reader.ready()) {
-                String c = reader.readLine();
-                if (a.isEmpty())
-                    a = c;
+                String currentRow = reader.readLine();
+                if (firstRowFromFile.isEmpty())
+                    firstRowFromFile = currentRow;
                 else
-                    b = c;
+                    lastRowFromFile = currentRow;
             }
         } catch (IOException e) {
             throw new ManagerLoadFromFileException(e);
         }
-        Assertions.assertEquals("id,type,name,status,description,epic", a);
-        Assertions.assertEquals("", b);
+        Assertions.assertEquals("id,type,name,status,description,epic", firstRowFromFile);
+        Assertions.assertEquals("", lastRowFromFile);
     }
 
     @Test
@@ -127,24 +127,22 @@ public class FileBackedTaskManagerTest {
         Task task1 = new Task(1, "Task1", "Description task1", TaskStatus.NEW);
         Epic epic2 = new Epic(2, "Epic2", "Description epic2", TaskStatus.DONE);
         SubTask subTask3 = new SubTask(3, "Sub Task2", "Description sub task3", TaskStatus.DONE, 2);
+        List<String> expectedLines = List.of(
+                "id,type,name,status,description,epic",
+                "1,TASK,Task1,NEW,Description task1",
+                "3,SUBTASK,Sub Task2,DONE,Description sub task3,2",
+                "2,EPIC,Epic2,DONE,Description epic2");
 
         fileBackedTaskManager.createTask(task1);
         fileBackedTaskManager.createEpic(epic2);
         fileBackedTaskManager.createSubTask(subTask3);
 
-        List<String> strings = new ArrayList<>();
-        try (InputStream inputStream = new FileInputStream(fileCanonicalPath);
-             InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-             BufferedReader reader = new BufferedReader(streamReader)) {
-            while (reader.ready()) {
-                strings.add(reader.readLine());
-            }
+        List<String> actualLines;
+        try {
+            actualLines = Files.readAllLines(Paths.get(fileCanonicalPath));
         } catch (IOException e) {
-            throw new ManagerLoadFromFileException(e);
+            throw new RuntimeException(e);
         }
-        Assertions.assertEquals("id,type,name,status,description,epic", strings.get(0));
-        Assertions.assertEquals("1,TASK,Task1,NEW,Description task1", strings.get(1));
-        Assertions.assertEquals("3,SUBTASK,Sub Task2,DONE,Description sub task3,2", strings.get(2));
-        Assertions.assertEquals("2,EPIC,Epic2,DONE,Description epic2", strings.get(3));
+        Assertions.assertEquals(expectedLines, actualLines);
     }
 }
