@@ -178,8 +178,7 @@ public class InMemoryTaskManager implements TaskManager {
         checkCollisionWithPrevAndNextNodes(task, prevTask, nextTask, exceptionMessage);
     }
 
-    private static void checkCollisionWithPrevAndNextNodes(Task task, Task prevTask, Task nextTask, 
-                                                           String exceptionMessage) {
+    private static void checkCollisionWithPrevAndNextNodes(Task task, Task prevTask, Task nextTask, String exceptionMessage) {
         if (prevTask == null) {
             whenOneOfTwoNodesIsNullCheckCollision(task, nextTask, exceptionMessage);
             return;
