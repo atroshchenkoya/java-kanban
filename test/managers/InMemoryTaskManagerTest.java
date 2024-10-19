@@ -4,9 +4,13 @@ import entity.Epic;
 import entity.SubTask;
 import entity.Task;
 import entity.TaskStatus;
+import exceptions.TimeCollisionException;
 import interfaces.TaskManager;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +31,7 @@ class InMemoryTaskManagerTest {
                 ()->taskManager.createSubTask(subTask1)
         );
     }
+
     @Test
     void epicContainsAddedToHimSubTask() {
         Epic epic1 = new Epic(0, "Pop", "Pop", TaskStatus.IN_PROGRESS);
@@ -37,6 +42,7 @@ class InMemoryTaskManagerTest {
 
         assertTrue(taskManager.getAllSubTask(epic1).contains(subtask1));
     }
+
     @Test
     void taskAddedSuccessfully() {
         Task task = new Task(0, "Pop", "Pop", TaskStatus.IN_PROGRESS);
@@ -44,7 +50,7 @@ class InMemoryTaskManagerTest {
         taskManager.createTask(task);
         Task addedTask = taskManager.getTask(0);
 
-        assertEquals(addedTask.getId(), 0);
+        assertEquals(0, addedTask.getId());
         assertEquals(addedTask.getTaskStatus(), task.getTaskStatus());
         assertEquals(addedTask.getName(), task.getName());
         assertEquals(addedTask.getDescription(), task.getDescription());
@@ -58,6 +64,59 @@ class InMemoryTaskManagerTest {
                 NullPointerException.class,
                 ()->taskManager.createSubTask(subTask)
         );
+    }
+
+    @Test
+    void getExceptionIfGetTimeCollision() {
+        Task task1 = new Task(0, "Task1", "Description task1",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-18T15:00"), Duration.parse("PT1H10M"));
+        Task task4 = new Task(3, "Task4", "Description task4",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H15M"));
+        Task task5 = new Task(4, "Task5", "Description task5",
+                TaskStatus.NEW, LocalDateTime.parse("0243-10-18T15:00"), Duration.parse("PT1H15M"));
+        Task task6 = new Task(5, "Task6", "Description task6",
+                TaskStatus.NEW, null, null);
+        Task task7 = new Task(6, "Task7", "Description task6",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-20T13:00"), Duration.parse("PT3H15M"));
+
+        taskManager.createTask(task1);
+        taskManager.createTask(task4);
+        taskManager.createTask(task5);
+        taskManager.createTask(task6);
+        assertThrowsExactly(
+                TimeCollisionException.class,
+                ()->taskManager.createTask(task7)
+        );
+    }
+
+    @Test
+    void sortWorksSuccessfully() {
+        Task task1 = new Task(0, "Task1", "Description task1",
+                TaskStatus.NEW, LocalDateTime.parse("2024-10-18T15:00"), Duration.parse("PT1H10M"));
+        Epic epic2 = new Epic(1, "Epic2", "Description epic2", TaskStatus.DONE);
+        SubTask subTask3 = new SubTask(2, "Sub Task3", "Description sub task3",
+                TaskStatus.DONE, 1, LocalDateTime.parse("2024-10-19T13:20"),
+                Duration.parse("PT40M"));
+        Task task4 = new Task(3, "Task4", "Description task4",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-18T15:00"), Duration.parse("PT1H15M"));
+        Task task5 = new Task(4, "Task5", "Description task5",
+                TaskStatus.NEW, LocalDateTime.parse("0243-10-18T15:00"), Duration.parse("PT1H15M"));
+        Task task6 = new Task(5, "Task6", "Description task6",
+                TaskStatus.NEW, null, null);
+        Task task7 = new Task(6, "Task7", "Description task7",
+                TaskStatus.NEW, null, null);
+
+        taskManager.createTask(task1);
+        taskManager.createEpic(epic2);
+        taskManager.createSubTask(subTask3);
+        taskManager.createTask(task4);
+        taskManager.createTask(task5);
+        taskManager.createTask(task6);
+        taskManager.createTask(task7);
+
+        Assertions.assertEquals(4,taskManager.getPrioritizedTasks().size());
+        Assertions.assertEquals(subTask3,taskManager.getPrioritizedTasks().get(2));
+
     }
 
     @Test
@@ -95,6 +154,6 @@ class InMemoryTaskManagerTest {
 
         assertTrue(taskManager.getHistory().containsAll(gotTasks));
         assertEquals(taskManager.getHistory().getLast(), subTask2);
-        assertEquals(taskManager.getHistory().size(), 4);
+        assertEquals(4, taskManager.getHistory().size());
     }
 }

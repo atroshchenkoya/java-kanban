@@ -18,7 +18,7 @@ public class InMemoryHistoryManagerTest {
 
         inMemoryHistoryManager.addTask(task);
 
-        assertEquals(inMemoryHistoryManager.getHistory().size(), 1);
+        assertEquals(1, inMemoryHistoryManager.getHistory().size());
         assertTrue(inMemoryHistoryManager.getHistory().contains(task));
     }
 
@@ -87,7 +87,7 @@ public class InMemoryHistoryManagerTest {
 
         inMemoryHistoryManager.removeTask(task2);
 
-        assertEquals(inMemoryHistoryManager.getHistory().size(), 2);
+        assertEquals(2, inMemoryHistoryManager.getHistory().size());
         assertFalse(inMemoryHistoryManager.getHistory().containsAll(List.of(task1, task2, task3)));
     }
 }
