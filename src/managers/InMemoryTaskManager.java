@@ -10,13 +10,7 @@ import entity.TaskStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeSet;
+import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
     protected final Map<Integer, Task> taskStorage = new HashMap<>();
@@ -113,11 +107,8 @@ public class InMemoryTaskManager implements TaskManager {
         );
 
         idCounter++;
+        checkCollisionAndPutInSortedSet(taskToCreate);
         taskStorage.put(taskToCreate.getId(), taskToCreate);
-        if (taskToCreate.getStartTime() != null) {
-            sortedTasksAndSubTasks.add(taskToCreate);
-            checkTimeCollision(taskToCreate);
-        }
     }
 
     @Override
@@ -134,15 +125,12 @@ public class InMemoryTaskManager implements TaskManager {
         );
 
         idCounter++;
+        checkCollisionAndPutInSortedSet(subTaskToCreate);
         subTaskStorage.put(subTaskToCreate.getId(), subTaskToCreate);
         int epicId = subTaskToCreate.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
         epic.linkSubTask(subTaskToCreate.getId());
         setEpicCalculableAttributes(epic);
-        if (subTaskToCreate.getStartTime() != null) {
-            sortedTasksAndSubTasks.add(subTaskToCreate);
-            checkTimeCollision(subTaskToCreate);
-        }
     }
 
     @Override
@@ -161,41 +149,13 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
+        if (task.getStartTime() == null) {
+            taskStorage.put(task.getId(), task);
+            sortedTasksAndSubTasks.remove(task);
+            return;
+        }
+        checkCollisionAndPutInSortedSet(task);
         taskStorage.put(task.getId(), task);
-        sortedTasksAndSubTasks.remove(task);
-        if (task.getStartTime() != null) {
-            sortedTasksAndSubTasks.add(task);
-            checkTimeCollision(task);
-        }
-    }
-
-    private void checkTimeCollision(Task task) {
-        if (sortedTasksAndSubTasks.size() <= 1)
-            return;
-        Task prevTask = sortedTasksAndSubTasks.lower(task);
-        Task nextTask = sortedTasksAndSubTasks.higher(task);
-        String exceptionMessage = "Time collision!!!";
-        checkCollisionWithPrevAndNextNodes(task, prevTask, nextTask, exceptionMessage);
-    }
-
-    private static void checkCollisionWithPrevAndNextNodes(Task task, Task prevTask, Task nextTask, String exceptionMessage) {
-        if (prevTask == null) {
-            whenOneOfTwoNodesIsNullCheckCollision(task, nextTask, exceptionMessage);
-            return;
-        }
-        if (nextTask == null) {
-            whenOneOfTwoNodesIsNullCheckCollision(prevTask, task, exceptionMessage);
-            return;
-        }
-        if (prevTask.getEndTime().isAfter(task.getStartTime()) || task.getEndTime().isAfter(nextTask.getStartTime())) {
-            throw new TimeCollisionException(exceptionMessage);
-        }
-    }
-
-    private static void whenOneOfTwoNodesIsNullCheckCollision(Task task, Task nextTask, String exceptionMessage) {
-        if (task.getEndTime().isAfter(nextTask.getStartTime())) {
-            throw new TimeCollisionException(exceptionMessage);
-        }
     }
 
     @Override
@@ -224,15 +184,15 @@ public class InMemoryTaskManager implements TaskManager {
                 subTaskStorage.get(subTask.getId()).getLinkedEpicId()
         );
 
+        if (forUpdateSubTask.getStartTime() != null)
+            checkCollisionAndPutInSortedSet(forUpdateSubTask);
+        else
+            sortedTasksAndSubTasks.remove(forUpdateSubTask);
+
         subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
         int epicId = forUpdateSubTask.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
         setEpicCalculableAttributes(epic);
-        sortedTasksAndSubTasks.remove(forUpdateSubTask);
-        if (forUpdateSubTask.getStartTime() != null) {
-            sortedTasksAndSubTasks.add(forUpdateSubTask);
-            checkTimeCollision(forUpdateSubTask);
-        }
     }
 
     @Override
@@ -327,4 +287,26 @@ public class InMemoryTaskManager implements TaskManager {
 
         epicStorage.put(epic.getId(), epic);
     }
+
+    private void checkCollisionAndPutInSortedSet(Task taskToCreate) {
+        if (taskToCreate.getStartTime() == null)
+            return;
+        sortedTasksAndSubTasks.add(taskToCreate);
+        if (checkTimeCollision(taskToCreate)) {
+            sortedTasksAndSubTasks.remove(taskToCreate);
+            throw new TimeCollisionException("Time collision!!!");
+        }
+
+    }
+
+    private boolean checkTimeCollision(Task task) {
+        var closestEndTime = Optional.ofNullable(sortedTasksAndSubTasks.lower(task))
+                .map(Task::getEndTime)
+                .orElse(LocalDateTime.MIN);
+        var closestStartTime = Optional.ofNullable(sortedTasksAndSubTasks.higher(task))
+                .map(Task::getStartTime)
+                .orElse(LocalDateTime.MAX);
+        return closestEndTime.isAfter(task.getStartTime()) || task.getEndTime().isAfter(closestStartTime);
+    }
+
 }
