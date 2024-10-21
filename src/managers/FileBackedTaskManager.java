@@ -18,6 +18,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -53,9 +55,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 loadInMemory(element);
             }
             linkLoadedSubTasksToTheirEpics();
+            setLoadedEpicStatusAndTime();
         } catch (IOException e) {
             throw new ManagerLoadFromFileException(e);
         }
+    }
+
+    private void setLoadedEpicStatusAndTime() {
+        epicStorage.values().forEach(this::setEpicCalculableAttributes);
     }
 
     private void linkLoadedSubTasksToTheirEpics() {
@@ -69,7 +76,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     Integer.parseInt(element[0]),
                     element[2],
                     element[4],
-                    TaskStatus.valueOf(element[3])
+                    TaskStatus.valueOf(element[3]),
+                    LocalDateTime.parse(element[6]),
+                    Duration.parse(element[7])
             );
             taskStorage.put(task.getId(), task);
             return;
@@ -80,7 +89,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     element[2],
                     element[4],
                     TaskStatus.valueOf(element[3]),
-                    Integer.parseInt(element[5])
+                    Integer.parseInt(element[5]),
+                    LocalDateTime.parse(element[6]),
+                    Duration.parse(element[7])
             );
             subTaskStorage.put(subTask.getId(), subTask);
             return;
@@ -102,7 +113,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
              BufferedWriter writer = new BufferedWriter(outputStreamWriter)) {
 
-            writer.write("id,type,name,status,description,epic");
+            writer.write("id,type,name,status,description,epic,startOn,duration");
             writer.newLine();
 
             List<String> lines = getAllLinesForWriteInFile();
@@ -151,7 +162,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private List<String> getSubTasksLines() {
         List<String> subTaskLines = new ArrayList<>();
         for (Integer id: subTaskStorage.keySet()) {
-            String[] line = new String[6];
+            String[] line = new String[8];
             SubTask subTask = subTaskStorage.get(id);
             line[0] = String.valueOf(subTask.getId());
             line[1] = "SUBTASK";
@@ -159,6 +170,16 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             line[3] = subTask.getTaskStatus().name();
             line[4] = subTask.getDescription();
             line[5] = String.valueOf(subTask.getLinkedEpicId());
+            String startTime = "";
+            if (subTask.getStartTime() != null) {
+                startTime = subTask.getStartTime().toString();
+            }
+            line[6] = startTime;
+            String duration = "";
+            if (subTask.getDuration() != null) {
+                duration = subTask.getDuration().toString();
+            }
+            line[7] = duration;
             String joinedLine = String.join(",", line);
             subTaskLines.add(joinedLine);
         }
@@ -168,13 +189,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private List<String> getTasksLines() {
         List<String> taskLines = new ArrayList<>();
         for (Integer id: taskStorage.keySet()) {
-            String[] line = new String[5];
+            String[] line = new String[8];
             Task task = taskStorage.get(id);
             line[0] = String.valueOf(task.getId());
             line[1] = "TASK";
             line[2] = task.getName();
             line[3] = task.getTaskStatus().name();
             line[4] = task.getDescription();
+            line[5] = "";
+            String startTime = "";
+            if (task.getStartTime() != null) {
+                startTime = task.getStartTime().toString();
+            }
+            line[6] = startTime;
+            String duration = "";
+            if (task.getDuration() != null) {
+                duration = task.getDuration().toString();
+            }
+            line[7] = duration;
             String joinedLine = String.join(",", line);
             taskLines.add(joinedLine);
         }
