@@ -116,7 +116,38 @@ class InMemoryTaskManagerTest {
 
         Assertions.assertEquals(4,taskManager.getPrioritizedTasks().size());
         Assertions.assertEquals(subTask3,taskManager.getPrioritizedTasks().get(2));
+        Assertions.assertEquals(task4, taskManager.getPrioritizedTasks().get(3));
+        Assertions.assertEquals(task5, taskManager.getPrioritizedTasks().get(0));
+        Assertions.assertEquals(task1, taskManager.getPrioritizedTasks().get(1));
+        Assertions.assertEquals("Description task5", taskManager.getPrioritizedTasks().get(0).getDescription());
+        Assertions.assertEquals("Task4", taskManager.getPrioritizedTasks().get(3).getName());
 
+    }
+
+    @Test
+    void updatedTaskHasRightPlaceInPriorityByTimeList() {
+        Task task1 = new Task(0, "Task1", "Description task1",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H10M"));
+        Task task2 = new Task(1, "Task2", "Description task2",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-20T17:00"), Duration.parse("PT1H15M"));
+        Task task3 = new Task(2, "Task3", "Description task3",
+                TaskStatus.NEW, LocalDateTime.parse("2040-10-20T20:00"), Duration.parse("PT1H15M"));
+        Task task4 = new Task(2, "Task3Updated", "Description task3Updated",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H20M"));
+        Task task5 = new Task(2, "Task3Updated", "Description task3Updated",
+                TaskStatus.NEW, LocalDateTime.parse("2028-10-18T15:00"), Duration.parse("PT1H50M"));
+        taskManager.createTask(task1);
+        taskManager.createTask(task2);
+        taskManager.createTask(task3);
+
+        taskManager.updateTask(task5);
+
+        Assertions.assertEquals("Description task3Updated",
+                taskManager.getPrioritizedTasks().getFirst().getDescription());
+        assertThrowsExactly(
+                TimeCollisionException.class,
+                ()->taskManager.updateTask(task4)
+        );
     }
 
     @Test
