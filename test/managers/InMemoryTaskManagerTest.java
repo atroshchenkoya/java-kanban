@@ -125,7 +125,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    void updatedTaskHasRightPlaceInPriorityByTimeList() {
+    void updatedByTimeTaskHasRightPlaceInPriorityByTimeList() {
         Task task1 = new Task(0, "Task1", "Description task1",
                 TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H10M"));
         Task task2 = new Task(1, "Task2", "Description task2",
