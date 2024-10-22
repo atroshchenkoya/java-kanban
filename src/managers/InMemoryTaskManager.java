@@ -332,9 +332,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
-        if (checkTimeCollision(taskToCreate)) {
+        if (checkTimeCollision(taskToCreate) || sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime())))
             throw new TimeCollisionException("Time collision on update (equal start time)!!!");
-        }
         sortedTasksAndSubTasks.add(taskToCreate);
     }
 

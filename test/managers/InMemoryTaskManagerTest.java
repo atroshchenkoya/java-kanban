@@ -126,7 +126,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    void updatedByTimeTaskGiveNoExceptionWhenNoCollision() {
+    void updatedByTimeTaskGiveNoExceptionWhenNoCollisionAndAmountOfSortedTaskCorrect() {
         Task task1 = new Task(0, "Task1", "Description task1",
                 TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H10M"));
         Task task2 = new Task(1, "Task2", "Description task2",
@@ -141,9 +141,11 @@ class InMemoryTaskManagerTest {
         taskManager.createTask(task2);
         taskManager.createTask(task3);
         taskManager.updateTask(task5);
-        taskManager.updateTask(task4);
 
-        Assertions.assertEquals(3, taskManager.getPrioritizedTasks().size());
+        assertThrowsExactly(
+                TimeCollisionException.class,
+                ()->taskManager.updateTask(task4)
+        );
     }
 
     @Test
