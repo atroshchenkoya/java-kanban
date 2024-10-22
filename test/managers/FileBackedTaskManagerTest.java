@@ -25,6 +25,8 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,7 +79,7 @@ public class FileBackedTaskManagerTest {
         } catch (IOException e) {
             throw new ManagerLoadFromFileException(e);
         }
-        Assertions.assertEquals("id,type,name,status,description,epic", firstRowFromFile);
+        Assertions.assertEquals("id,type,name,status,description,epic,startOn,duration", firstRowFromFile);
         Assertions.assertEquals("", lastRowFromFile);
     }
 
@@ -91,17 +93,17 @@ public class FileBackedTaskManagerTest {
     }
 
     @Test
-    void loadTasksFromFileShouldBeOk() {
+    void loadTasksFromFileShouldBeOkWithTimeElementsInFile() {
         try (OutputStream outputStream = new FileOutputStream(fileCanonicalPath);
              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
              BufferedWriter writer = new BufferedWriter(outputStreamWriter)) {
-            writer.write("id,type,name,status,description,epic");
+            writer.write("id,type,name,status,description,epic,startOn,duration");
             writer.newLine();
             List<String> lines = List.of(
-                    "1,TASK,Task1,NEW,Description task1,",
-                    "2,EPIC,Epic2,DONE,Description epic2,",
-                    "3,SUBTASK,Sub Task2,DONE,Description sub task3,2"
-            );
+                    "id,type,name,status,description,epic,startOn,duration",
+                    "1,TASK,Task1,NEW,Description task1,,2024-10-18T15:00,PT1H10M",
+                    "3,SUBTASK,Sub Task2,DONE,Description sub task3,2,2024-10-19T13:20,PT40M",
+                    "2,EPIC,Epic2,NEW,Description epic2");
             for (String line: lines) {
                 writer.write(line);
                 writer.newLine();
@@ -112,14 +114,15 @@ public class FileBackedTaskManagerTest {
 
         fileBackedTaskManager = new FileBackedTaskManager(fileCanonicalPath);
 
+        Assertions.assertEquals(LocalDateTime.parse("2024-10-18T15:00") ,fileBackedTaskManager.getTask(1).getStartTime());
+        Assertions.assertEquals(LocalDateTime.parse("2024-10-19T13:20") ,fileBackedTaskManager.getSubTask(3).getStartTime());
+        Assertions.assertEquals("DONE", fileBackedTaskManager.getEpic(2).getTaskStatus().toString());
         Assertions.assertEquals("Description task1" ,fileBackedTaskManager.getTask(1).getDescription());
         Assertions.assertEquals("Description epic2" ,fileBackedTaskManager.getEpic(2).getDescription());
         Assertions.assertEquals("Description sub task3" ,fileBackedTaskManager
                 .getSubTask(3).getDescription());
         Assertions.assertEquals(2, fileBackedTaskManager.getSubTask(3).getLinkedEpicId());
         Assertions.assertEquals("Epic2", fileBackedTaskManager.getEpic(2).getName());
-        Assertions.assertEquals("DONE", fileBackedTaskManager.getEpic(2).getTaskStatus().toString());
-
     }
 
     @Test
@@ -128,9 +131,36 @@ public class FileBackedTaskManagerTest {
         Epic epic2 = new Epic(2, "Epic2", "Description epic2", TaskStatus.DONE);
         SubTask subTask3 = new SubTask(3, "Sub Task2", "Description sub task3", TaskStatus.DONE, 2);
         List<String> expectedLines = List.of(
-                "id,type,name,status,description,epic",
-                "1,TASK,Task1,NEW,Description task1",
-                "3,SUBTASK,Sub Task2,DONE,Description sub task3,2",
+                "id,type,name,status,description,epic,startOn,duration",
+                "1,TASK,Task1,NEW,Description task1,,,",
+                "3,SUBTASK,Sub Task2,DONE,Description sub task3,2,,",
+                "2,EPIC,Epic2,DONE,Description epic2");
+
+        fileBackedTaskManager.createTask(task1);
+        fileBackedTaskManager.createEpic(epic2);
+        fileBackedTaskManager.createSubTask(subTask3);
+
+        List<String> actualLines;
+        try {
+            actualLines = Files.readAllLines(Paths.get(fileCanonicalPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Assertions.assertEquals(expectedLines, actualLines);
+    }
+
+    @Test
+    void loadTasksToFileWithTimeElementsShouldBeOk() {
+        Task task1 = new Task(1, "Task1", "Description task1",
+                TaskStatus.NEW, LocalDateTime.parse("2024-10-18T15:00"), Duration.parse("PT1H10M"));
+        Epic epic2 = new Epic(2, "Epic2", "Description epic2", TaskStatus.DONE);
+        SubTask subTask3 = new SubTask(3, "Sub Task2", "Description sub task3",
+                TaskStatus.DONE, 2, LocalDateTime.parse("2024-10-19T13:20"),
+                Duration.parse("PT40M"));
+        List<String> expectedLines = List.of(
+                "id,type,name,status,description,epic,startOn,duration",
+                "1,TASK,Task1,NEW,Description task1,,2024-10-18T15:00,PT1H10M",
+                "3,SUBTASK,Sub Task2,DONE,Description sub task3,2,2024-10-19T13:20,PT40M",
                 "2,EPIC,Epic2,DONE,Description epic2");
 
         fileBackedTaskManager.createTask(task1);

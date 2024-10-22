@@ -1,5 +1,6 @@
 package managers;
 
+import exceptions.TimeCollisionException;
 import interfaces.HistoryManager;
 import interfaces.TaskManager;
 import entity.Epic;
@@ -7,15 +8,15 @@ import entity.SubTask;
 import entity.Task;
 import entity.TaskStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
     protected final Map<Integer, Task> taskStorage = new HashMap<>();
     protected final Map<Integer, SubTask> subTaskStorage = new HashMap<>();
     protected final Map<Integer, Epic> epicStorage = new HashMap<>();
+    protected final TreeSet<Task> sortedTasksAndSubTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime));
     private final HistoryManager historyManager = Managers.getDefaultHistory();
     protected int idCounter = 0;
 
@@ -35,12 +36,19 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
+    public List<Task> getPrioritizedTasks() {
+        return sortedTasksAndSubTasks.stream().toList();
+    }
+
+    @Override
     public void deleteAllTask() {
+        taskStorage.values().forEach(sortedTasksAndSubTasks::remove);
         taskStorage.clear();
     }
 
     @Override
     public void deleteAllSubTask() {
+        subTaskStorage.values().forEach(sortedTasksAndSubTasks::remove);
         subTaskStorage.clear();
         for (Epic epic : epicStorage.values()) {
             epic.setTaskStatus(TaskStatus.NEW);
@@ -52,7 +60,10 @@ public class InMemoryTaskManager implements TaskManager {
     public void deleteAllEpic() {
         epicStorage.values().stream()
                 .flatMap(epic -> epic.getLinkedSubTask().stream())
-                .forEach(subTaskStorage::remove);
+                .forEach(subTaskId -> {
+                    sortedTasksAndSubTasks.remove(subTaskStorage.get(subTaskId));
+                    subTaskStorage.remove(subTaskId);
+                });
         epicStorage.clear();
     }
 
@@ -90,10 +101,13 @@ public class InMemoryTaskManager implements TaskManager {
                 idCounter,
                 incomingTask.getName(),
                 incomingTask.getDescription(),
-                incomingTask.getTaskStatus()
+                incomingTask.getTaskStatus(),
+                incomingTask.getStartTime(),
+                incomingTask.getDuration()
         );
 
         idCounter++;
+        checkCollisionAndPutInSortedSetForCreate(taskToCreate);
         taskStorage.put(taskToCreate.getId(), taskToCreate);
     }
 
@@ -105,15 +119,18 @@ public class InMemoryTaskManager implements TaskManager {
                 incomingSubTask.getName(),
                 incomingSubTask.getDescription(),
                 incomingSubTask.getTaskStatus(),
-                incomingSubTask.getLinkedEpicId()
+                incomingSubTask.getLinkedEpicId(),
+                incomingSubTask.getStartTime(),
+                incomingSubTask.getDuration()
         );
 
         idCounter++;
+        checkCollisionAndPutInSortedSetForCreate(subTaskToCreate);
         subTaskStorage.put(subTaskToCreate.getId(), subTaskToCreate);
         int epicId = subTaskToCreate.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
         epic.linkSubTask(subTaskToCreate.getId());
-        setEpicStatus(epic);
+        setEpicCalculableAttributes(epic);
     }
 
     @Override
@@ -132,6 +149,12 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
+        if (task.getStartTime() == null) {
+            taskStorage.put(task.getId(), task);
+            removeFromSortedSetById(task);
+            return;
+        }
+        checkCollisionAndPutInSortedSetForUpdate(task);
         taskStorage.put(task.getId(), task);
     }
 
@@ -147,12 +170,11 @@ public class InMemoryTaskManager implements TaskManager {
 
         forUpdateEpic.linkSubTask(epicStorage.get(incomingEpic.getId()).getLinkedSubTask());
         epicStorage.put(forUpdateEpic.getId(), forUpdateEpic);
-        setEpicStatus(forUpdateEpic);
+        setEpicCalculableAttributes(forUpdateEpic);
     }
 
     @Override
     public void updateSubTask(SubTask subTask) {
-
         SubTask forUpdateSubTask = new SubTask(
                 subTask.getId(),
                 subTask.getName(),
@@ -160,29 +182,34 @@ public class InMemoryTaskManager implements TaskManager {
                 subTask.getTaskStatus(),
                 subTaskStorage.get(subTask.getId()).getLinkedEpicId()
         );
-
-        subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
-        int epicId = forUpdateSubTask.getLinkedEpicId();
-        Epic epic = epicStorage.get(epicId);
-        setEpicStatus(epic);
+        if (subTask.getStartTime() == null) {
+            removeFromSortedSetById(subTask);
+            putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
+            return;
+        }
+        checkCollisionAndPutInSortedSetForUpdate(forUpdateSubTask);
+        putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
     }
 
     @Override
     public void removeTask(int id) {
+        sortedTasksAndSubTasks.remove(taskStorage.get(id));
         taskStorage.remove(id);
     }
 
     @Override
     public void removeSubTask(int id) {
+        sortedTasksAndSubTasks.remove(subTaskStorage.get(id));
         int epicId = subTaskStorage.get(id).getLinkedEpicId();
         Epic linkedEpic = epicStorage.get(epicId);
         linkedEpic.unLinkSubTask(id);
-        setEpicStatus(linkedEpic);
+        setEpicCalculableAttributes(linkedEpic);
         subTaskStorage.remove(id);
     }
 
     @Override
     public void removeEpic(int id) {
+        epicStorage.get(id).getLinkedSubTask().forEach(x -> sortedTasksAndSubTasks.remove(subTaskStorage.get(x)));
         epicStorage.get(id).getLinkedSubTask().forEach(subTaskStorage::remove);
         epicStorage.remove(id);
     }
@@ -202,7 +229,19 @@ public class InMemoryTaskManager implements TaskManager {
         return historyManager.getHistory();
     }
 
-    public void setEpicStatus(Epic epic) {
+    private void putInTaskStorageAndSetLinkedEpicAttributes(SubTask forUpdateSubTask) {
+        subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
+        int epicId = forUpdateSubTask.getLinkedEpicId();
+        Epic epic = epicStorage.get(epicId);
+        setEpicCalculableAttributes(epic);
+    }
+
+    protected void setEpicCalculableAttributes(Epic epic) {
+        setEpicStartTimeAndEndTimeAndDuration(epic);
+        setEpicStatus(epic);
+    }
+
+    private void setEpicStatus(Epic epic) {
         if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty()) {
             epic.setTaskStatus(TaskStatus.NEW);
             epicStorage.put(epic.getId(), epic);
@@ -210,7 +249,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
 
         List<Integer> linkedSubTask = epic.getLinkedSubTask();
-        int firstSubTaskId = linkedSubTask.get(0);
+        int firstSubTaskId = linkedSubTask.getFirst();
         TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
 
         for (int i = 1; i < linkedSubTask.size(); i++) {
@@ -223,5 +262,88 @@ public class InMemoryTaskManager implements TaskManager {
         }
         epic.setTaskStatus(firstSubTaskStatus);
         epicStorage.put(epic.getId(), epic);
+    }
+
+    private void setEpicStartTimeAndEndTimeAndDuration(Epic epic) {
+        LocalDateTime startEpicTime = epic.getLinkedSubTask().stream()
+                .map(this::getSubTask)
+                .map(Task::getStartTime)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElse(null);
+        epic.setStartTime(startEpicTime);
+
+        LocalDateTime endEpicTime = epic.getLinkedSubTask().stream()
+                .map(this::getSubTask)
+                .map(Task::getEndTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder()).orElse(null);
+        epic.setEndTime(endEpicTime);
+
+        long epicDurationInMinutes = epic.getLinkedSubTask().stream()
+                .map(this::getSubTask)
+                .map(Task::getDuration)
+                .filter(Objects::nonNull)
+                .mapToLong(Duration::toMinutes)
+                .sum();
+        Duration epicDuration = Duration.ofMinutes(epicDurationInMinutes);
+        epic.setDuration(epicDuration);
+
+        epicStorage.put(epic.getId(), epic);
+    }
+
+    private void removeFromSortedSetById(Task task) {
+        sortedTasksAndSubTasks.stream().filter(x -> x.equals(task)).findFirst().ifPresent(sortedTasksAndSubTasks::remove);
+    }
+
+    private void checkCollisionAndPutInSortedSetForCreate(Task taskToCreate) {
+        if (taskToCreate.getStartTime() == null)
+            return;
+        if (checkTimeCollision(taskToCreate))
+            throw new TimeCollisionException("Time collision on create!!!");
+        sortedTasksAndSubTasks.add(taskToCreate);
+    }
+
+    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToCreate) {
+        if (sortedTasksAndSubTasks.contains(taskToCreate)) {
+            checkCollisionAndDoTransactionalLogicOnEqualTime(taskToCreate);
+            return;
+        }
+        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.equals(taskToCreate))) {
+            checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
+            return;
+        }
+        if (checkTimeCollision(taskToCreate)) {
+            throw new TimeCollisionException("Time collision on update!!!");
+        }
+        sortedTasksAndSubTasks.add(taskToCreate);
+    }
+
+    private void checkCollisionAndDoTransactionalLogicOnEqualTaskId(Task taskToCreate) {
+        Task previousTask = sortedTasksAndSubTasks.stream()
+                .filter(x -> x.equals(taskToCreate))
+                .findFirst()
+                .orElse(null);
+        sortedTasksAndSubTasks.remove(previousTask);
+        if (checkTimeCollision(taskToCreate)) {
+            sortedTasksAndSubTasks.add(previousTask);
+            throw new TimeCollisionException("Time collision on update!!!");
+        }
+        sortedTasksAndSubTasks.add(taskToCreate);
+    }
+
+    private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
+        if (checkTimeCollision(taskToCreate) || sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime())))
+            throw new TimeCollisionException("Time collision on update (equal start time)!!!");
+        sortedTasksAndSubTasks.add(taskToCreate);
+    }
+
+    private boolean checkTimeCollision(Task task) {
+        var closestEndTime = Optional.ofNullable(sortedTasksAndSubTasks.lower(task))
+                .map(Task::getEndTime)
+                .orElse(LocalDateTime.MIN);
+        var closestStartTime = Optional.ofNullable(sortedTasksAndSubTasks.higher(task))
+                .map(Task::getStartTime)
+                .orElse(LocalDateTime.MAX);
+        return closestEndTime.isAfter(task.getStartTime()) || task.getEndTime().isAfter(closestStartTime);
     }
 }
