@@ -298,11 +298,9 @@ public class InMemoryTaskManager implements TaskManager {
     private void checkCollisionAndPutInSortedSetForCreate(Task taskToCreate) {
         if (taskToCreate.getStartTime() == null)
             return;
-        sortedTasksAndSubTasks.add(taskToCreate);
-        if (checkTimeCollision(taskToCreate)) {
-            sortedTasksAndSubTasks.remove(taskToCreate);
+        if (checkTimeCollision(taskToCreate))
             throw new TimeCollisionException("Time collision on create!!!");
-        }
+        sortedTasksAndSubTasks.add(taskToCreate);
     }
 
     private void checkCollisionAndPutInSortedSetForUpdate(Task taskToCreate) {
@@ -314,11 +312,10 @@ public class InMemoryTaskManager implements TaskManager {
             checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
             return;
         }
-        sortedTasksAndSubTasks.add(taskToCreate);
         if (checkTimeCollision(taskToCreate)) {
-            sortedTasksAndSubTasks.remove(taskToCreate);
             throw new TimeCollisionException("Time collision on update!!!");
         }
+        sortedTasksAndSubTasks.add(taskToCreate);
     }
 
     private void checkCollisionAndDoTransactionalLogicOnEqualTaskId(Task taskToCreate) {
@@ -327,24 +324,18 @@ public class InMemoryTaskManager implements TaskManager {
                 .findFirst()
                 .orElse(null);
         sortedTasksAndSubTasks.remove(previousTask);
-        sortedTasksAndSubTasks.add(taskToCreate);
         if (checkTimeCollision(taskToCreate)) {
-            sortedTasksAndSubTasks.remove(taskToCreate);
             sortedTasksAndSubTasks.add(previousTask);
             throw new TimeCollisionException("Time collision on update!!!");
         }
+        sortedTasksAndSubTasks.add(taskToCreate);
     }
 
     private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
-        Task previousTask = sortedTasksAndSubTasks.stream()
-                .filter(x -> x.getStartTime().equals(taskToCreate.getStartTime()))
-                .findFirst()
-                .orElse(null);
-        sortedTasksAndSubTasks.add(taskToCreate);
         if (checkTimeCollision(taskToCreate)) {
-            sortedTasksAndSubTasks.add(previousTask);
             throw new TimeCollisionException("Time collision on update (equal start time)!!!");
         }
+        sortedTasksAndSubTasks.add(taskToCreate);
     }
 
     private boolean checkTimeCollision(Task task) {
