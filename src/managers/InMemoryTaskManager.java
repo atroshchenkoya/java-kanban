@@ -310,7 +310,7 @@ public class InMemoryTaskManager implements TaskManager {
             checkCollisionAndDoTransactionalLogicOnEqualTime(taskToCreate);
             return;
         }
-        if (sortedTasksAndSubTasks.stream().anyMatch(x->x.equals(taskToCreate))) {
+        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.equals(taskToCreate))) {
             checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
             return;
         }
@@ -323,7 +323,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     private void checkCollisionAndDoTransactionalLogicOnEqualTaskId(Task taskToCreate) {
         Task previousTask = sortedTasksAndSubTasks.stream()
-                .filter(x->x.equals(taskToCreate))
+                .filter(x -> x.equals(taskToCreate))
                 .findFirst()
                 .orElse(null);
         sortedTasksAndSubTasks.remove(previousTask);
@@ -337,7 +337,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
         Task previousTask = sortedTasksAndSubTasks.stream()
-                .filter(x->x.getStartTime().equals(taskToCreate.getStartTime()))
+                .filter(x -> x.getStartTime().equals(taskToCreate.getStartTime()))
                 .findFirst()
                 .orElse(null);
         sortedTasksAndSubTasks.add(taskToCreate);
