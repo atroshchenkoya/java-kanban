@@ -107,7 +107,7 @@ public class InMemoryTaskManager implements TaskManager {
         );
 
         idCounter++;
-        checkCollisionAndPutInSortedSet(taskToCreate);
+        checkCollisionAndPutInSortedSetForCreate(taskToCreate);
         taskStorage.put(taskToCreate.getId(), taskToCreate);
     }
 
@@ -125,7 +125,7 @@ public class InMemoryTaskManager implements TaskManager {
         );
 
         idCounter++;
-        checkCollisionAndPutInSortedSet(subTaskToCreate);
+        checkCollisionAndPutInSortedSetForCreate(subTaskToCreate);
         subTaskStorage.put(subTaskToCreate.getId(), subTaskToCreate);
         int epicId = subTaskToCreate.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
@@ -151,10 +151,10 @@ public class InMemoryTaskManager implements TaskManager {
     public void updateTask(Task task) {
         if (task.getStartTime() == null) {
             taskStorage.put(task.getId(), task);
-            sortedTasksAndSubTasks.remove(task);
+            removeFromSortedSetById(task);
             return;
         }
-        checkCollisionAndPutInSortedSet(task);
+        checkCollisionAndPutInSortedSetForUpdate(task);
         taskStorage.put(task.getId(), task);
     }
 
@@ -175,7 +175,6 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateSubTask(SubTask subTask) {
-
         SubTask forUpdateSubTask = new SubTask(
                 subTask.getId(),
                 subTask.getName(),
@@ -183,16 +182,13 @@ public class InMemoryTaskManager implements TaskManager {
                 subTask.getTaskStatus(),
                 subTaskStorage.get(subTask.getId()).getLinkedEpicId()
         );
-
-        if (forUpdateSubTask.getStartTime() != null)
-            checkCollisionAndPutInSortedSet(forUpdateSubTask);
-        else
-            sortedTasksAndSubTasks.remove(forUpdateSubTask);
-
-        subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
-        int epicId = forUpdateSubTask.getLinkedEpicId();
-        Epic epic = epicStorage.get(epicId);
-        setEpicCalculableAttributes(epic);
+        if (subTask.getStartTime() == null) {
+            removeFromSortedSetById(subTask);
+            putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
+            return;
+        }
+        checkCollisionAndPutInSortedSetForUpdate(forUpdateSubTask);
+        putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
     }
 
     @Override
@@ -231,6 +227,13 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<Task> getHistory() {
         return historyManager.getHistory();
+    }
+
+    private void putInTaskStorageAndSetLinkedEpicAttributes(SubTask forUpdateSubTask) {
+        subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
+        int epicId = forUpdateSubTask.getLinkedEpicId();
+        Epic epic = epicStorage.get(epicId);
+        setEpicCalculableAttributes(epic);
     }
 
     protected void setEpicCalculableAttributes(Epic epic) {
@@ -288,17 +291,60 @@ public class InMemoryTaskManager implements TaskManager {
         epicStorage.put(epic.getId(), epic);
     }
 
-    private void checkCollisionAndPutInSortedSet(Task taskToCreate) {
+    private void removeFromSortedSetById(Task task) {
+        sortedTasksAndSubTasks.stream().filter(x -> x.equals(task)).findFirst().ifPresent(sortedTasksAndSubTasks::remove);
+    }
+
+    private void checkCollisionAndPutInSortedSetForCreate(Task taskToCreate) {
         if (taskToCreate.getStartTime() == null)
             return;
-        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime())))
-            throw new TimeCollisionException("Time collision!!!");
         sortedTasksAndSubTasks.add(taskToCreate);
         if (checkTimeCollision(taskToCreate)) {
             sortedTasksAndSubTasks.remove(taskToCreate);
-            throw new TimeCollisionException("Time collision!!!");
+            throw new TimeCollisionException("Time collision on create!!!");
         }
+    }
 
+    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToCreate) {
+        if (sortedTasksAndSubTasks.contains(taskToCreate)) {
+            checkCollisionAndDoTransactionalLogicOnEqualTime(taskToCreate);
+            return;
+        }
+        if (sortedTasksAndSubTasks.stream().anyMatch(x->x.equals(taskToCreate))) {
+            checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
+            return;
+        }
+        sortedTasksAndSubTasks.add(taskToCreate);
+        if (checkTimeCollision(taskToCreate)) {
+            sortedTasksAndSubTasks.remove(taskToCreate);
+            throw new TimeCollisionException("Time collision on update!!!");
+        }
+    }
+
+    private void checkCollisionAndDoTransactionalLogicOnEqualTaskId(Task taskToCreate) {
+        Task previousTask = sortedTasksAndSubTasks.stream()
+                .filter(x->x.equals(taskToCreate))
+                .findFirst()
+                .orElse(null);
+        sortedTasksAndSubTasks.remove(previousTask);
+        sortedTasksAndSubTasks.add(taskToCreate);
+        if (checkTimeCollision(taskToCreate)) {
+            sortedTasksAndSubTasks.remove(taskToCreate);
+            sortedTasksAndSubTasks.add(previousTask);
+            throw new TimeCollisionException("Time collision on update!!!");
+        }
+    }
+
+    private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
+        Task previousTask = sortedTasksAndSubTasks.stream()
+                .filter(x->x.getStartTime().equals(taskToCreate.getStartTime()))
+                .findFirst()
+                .orElse(null);
+        sortedTasksAndSubTasks.add(taskToCreate);
+        if (checkTimeCollision(taskToCreate)) {
+            sortedTasksAndSubTasks.add(previousTask);
+            throw new TimeCollisionException("Time collision on update (equal start time)!!!");
+        }
     }
 
     private boolean checkTimeCollision(Task task) {
@@ -310,5 +356,4 @@ public class InMemoryTaskManager implements TaskManager {
                 .orElse(LocalDateTime.MAX);
         return closestEndTime.isAfter(task.getStartTime()) || task.getEndTime().isAfter(closestStartTime);
     }
-
 }

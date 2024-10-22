@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -125,7 +126,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    void updatedByTimeTaskHasRightPlaceInPriorityByTimeList() {
+    void updatedByTimeTaskGiveNoExceptionWhenNoCollision() {
         Task task1 = new Task(0, "Task1", "Description task1",
                 TaskStatus.NEW, LocalDateTime.parse("2028-10-20T15:00"), Duration.parse("PT1H10M"));
         Task task2 = new Task(1, "Task2", "Description task2",
@@ -139,15 +140,10 @@ class InMemoryTaskManagerTest {
         taskManager.createTask(task1);
         taskManager.createTask(task2);
         taskManager.createTask(task3);
-
         taskManager.updateTask(task5);
+        taskManager.updateTask(task4);
 
-        Assertions.assertEquals("Description task3Updated",
-                taskManager.getPrioritizedTasks().getFirst().getDescription());
-        assertThrowsExactly(
-                TimeCollisionException.class,
-                ()->taskManager.updateTask(task4)
-        );
+        Assertions.assertEquals(3, taskManager.getPrioritizedTasks().size());
     }
 
     @Test
@@ -159,6 +155,21 @@ class InMemoryTaskManagerTest {
         taskManager.createSubTask(subTask);
 
         assertEquals(taskManager.getSubTask(1), subTask);
+    }
+
+    @Test
+    void checkMultipleUpdateNoDuplicatesInPrioritizedList() {
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.ofMillis(1);
+        LocalDateTime t1 = now.plus(duration);
+        Task initialTask = new Task(0, "task", "desc", TaskStatus.IN_PROGRESS, t1, duration);
+        taskManager.createTask(initialTask);
+        Stream.iterate(0, i -> i + 1)
+                .limit(10)
+                .map(i -> new Task(initialTask.getId(), "task" + i, "desc" + i, TaskStatus.IN_PROGRESS, now.plus(duration.multipliedBy(i + 2)), duration))
+                .forEach(taskManager::updateTask);
+
+        assertEquals(1, taskManager.getPrioritizedTasks().size());
     }
 
     @Test
