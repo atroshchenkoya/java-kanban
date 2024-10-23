@@ -250,7 +250,7 @@ public class InMemoryTaskManager implements TaskManager {
         List<Integer> linkedSubTask = epic.getLinkedSubTask();
         int firstSubTaskId = linkedSubTask.getFirst();
         TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
-        if (linkedSubTask.stream().anyMatch(x->subTaskStorage.get(x).getTaskStatus() != firstSubTaskStatus))
+        if (linkedSubTask.stream().anyMatch(x -> subTaskStorage.get(x).getTaskStatus() != firstSubTaskStatus))
             epic.setTaskStatus(TaskStatus.IN_PROGRESS);
         else
             epic.setTaskStatus(firstSubTaskStatus);
