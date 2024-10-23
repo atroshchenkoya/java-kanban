@@ -247,20 +247,13 @@ public class InMemoryTaskManager implements TaskManager {
             epicStorage.put(epic.getId(), epic);
             return;
         }
-
         List<Integer> linkedSubTask = epic.getLinkedSubTask();
         int firstSubTaskId = linkedSubTask.getFirst();
         TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
-
-        for (int i = 1; i < linkedSubTask.size(); i++) {
-            int subTaskId = linkedSubTask.get(i);
-            if (firstSubTaskStatus != subTaskStorage.get(subTaskId).getTaskStatus()) {
-                epic.setTaskStatus(TaskStatus.IN_PROGRESS);
-                epicStorage.put(epic.getId(), epic);
-                return;
-            }
-        }
-        epic.setTaskStatus(firstSubTaskStatus);
+        if (linkedSubTask.stream().anyMatch(x->subTaskStorage.get(x).getTaskStatus() != firstSubTaskStatus))
+            epic.setTaskStatus(TaskStatus.IN_PROGRESS);
+        else
+            epic.setTaskStatus(firstSubTaskStatus);
         epicStorage.put(epic.getId(), epic);
     }
 
@@ -312,9 +305,8 @@ public class InMemoryTaskManager implements TaskManager {
             checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
             return;
         }
-        if (checkTimeCollision(taskToCreate)) {
+        if (checkTimeCollision(taskToCreate))
             throw new TimeCollisionException("Time collision on update!!!");
-        }
         sortedTasksAndSubTasks.add(taskToCreate);
     }
 

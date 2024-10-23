@@ -170,18 +170,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             line[3] = subTask.getTaskStatus().name();
             line[4] = subTask.getDescription();
             line[5] = String.valueOf(subTask.getLinkedEpicId());
-            String startTime = "";
-            if (subTask.getStartTime() != null) {
-                startTime = subTask.getStartTime().toString();
-            }
-            line[6] = startTime;
-            String duration = "";
-            if (subTask.getDuration() != null) {
-                duration = subTask.getDuration().toString();
-            }
-            line[7] = duration;
-            String joinedLine = String.join(",", line);
-            subTaskLines.add(joinedLine);
+            setTimeParams(subTaskLines, line, subTask.getStartTime(), subTask.getDuration());
         }
         return subTaskLines;
     }
@@ -197,20 +186,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             line[3] = task.getTaskStatus().name();
             line[4] = task.getDescription();
             line[5] = "";
-            String startTime = "";
-            if (task.getStartTime() != null) {
-                startTime = task.getStartTime().toString();
-            }
-            line[6] = startTime;
-            String duration = "";
-            if (task.getDuration() != null) {
-                duration = task.getDuration().toString();
-            }
-            line[7] = duration;
-            String joinedLine = String.join(",", line);
-            taskLines.add(joinedLine);
+            setTimeParams(taskLines, line, task.getStartTime(), task.getDuration());
         }
         return taskLines;
+    }
+
+    private void setTimeParams(List<String> subTaskLines, String[] line, LocalDateTime startTimeToWrite, Duration durationToWrite) {
+        String startTime = "";
+        if (startTimeToWrite != null) {
+            startTime = startTimeToWrite.toString();
+        }
+        line[6] = startTime;
+        String duration = "";
+        if (durationToWrite != null) {
+            duration = durationToWrite.toString();
+        }
+        line[7] = duration;
+        String joinedLine = String.join(",", line);
+        subTaskLines.add(joinedLine);
     }
 
     @Override
