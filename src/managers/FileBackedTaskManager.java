@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
@@ -145,9 +146,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private List<String> getEpicLines() {
         List<String> epicLines = new ArrayList<>();
-        for (Integer id: epicStorage.keySet()) {
+        for (Map.Entry<Integer, Epic> entry: epicStorage.entrySet()) {
             String[] line = new String[5];
-            Epic epic = epicStorage.get(id);
+            Epic epic = epicStorage.get(entry.getKey());
             line[0] = String.valueOf(epic.getId());
             line[1] = "EPIC";
             line[2] = epic.getName();
@@ -161,9 +162,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private List<String> getSubTasksLines() {
         List<String> subTaskLines = new ArrayList<>();
-        for (Integer id: subTaskStorage.keySet()) {
+        for (Map.Entry<Integer, SubTask> entry: subTaskStorage.entrySet()) {
             String[] line = new String[8];
-            SubTask subTask = subTaskStorage.get(id);
+            SubTask subTask = subTaskStorage.get(entry.getKey());
             line[0] = String.valueOf(subTask.getId());
             line[1] = "SUBTASK";
             line[2] = subTask.getName();
@@ -177,9 +178,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private List<String> getTasksLines() {
         List<String> taskLines = new ArrayList<>();
-        for (Integer id: taskStorage.keySet()) {
+        for (Map.Entry<Integer, Task> entry: taskStorage.entrySet()) {
             String[] line = new String[8];
-            Task task = taskStorage.get(id);
+            Task task = taskStorage.get(entry.getKey());
             line[0] = String.valueOf(task.getId());
             line[1] = "TASK";
             line[2] = task.getName();
