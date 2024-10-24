@@ -1,9 +1,12 @@
-package managers;
+package ru.practicum.kanban.managers;
 
-import interfaces.HistoryManager;
-import interfaces.TaskManager;
+import ru.practicum.kanban.interfaces.HistoryManager;
+import ru.practicum.kanban.interfaces.TaskManager;
 
 public class Managers {
+
+    private Managers() {
+    }
 
     public static TaskManager getDefault() {
         return new InMemoryTaskManager();

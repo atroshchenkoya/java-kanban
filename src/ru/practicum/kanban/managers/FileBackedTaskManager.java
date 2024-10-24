@@ -1,12 +1,12 @@
-package managers;
+package ru.practicum.kanban.managers;
 
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
-import entity.TaskStatus;
-import entity.TaskType;
-import exceptions.ManagerLoadFromFileException;
-import exceptions.ManagerSaveToFileException;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
+import ru.practicum.kanban.entity.TaskType;
+import ru.practicum.kanban.exceptions.ManagerLoadFromFileException;
+import ru.practicum.kanban.exceptions.ManagerSaveToFileException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
@@ -145,9 +146,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private List<String> getEpicLines() {
         List<String> epicLines = new ArrayList<>();
-        for (Integer id: epicStorage.keySet()) {
+        for (Map.Entry<Integer, Epic> entry: epicStorage.entrySet()) {
             String[] line = new String[5];
-            Epic epic = epicStorage.get(id);
+            Epic epic = epicStorage.get(entry.getKey());
             line[0] = String.valueOf(epic.getId());
             line[1] = "EPIC";
             line[2] = epic.getName();
@@ -161,56 +162,49 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private List<String> getSubTasksLines() {
         List<String> subTaskLines = new ArrayList<>();
-        for (Integer id: subTaskStorage.keySet()) {
+        for (Map.Entry<Integer, SubTask> entry: subTaskStorage.entrySet()) {
             String[] line = new String[8];
-            SubTask subTask = subTaskStorage.get(id);
+            SubTask subTask = subTaskStorage.get(entry.getKey());
             line[0] = String.valueOf(subTask.getId());
             line[1] = "SUBTASK";
             line[2] = subTask.getName();
             line[3] = subTask.getTaskStatus().name();
             line[4] = subTask.getDescription();
             line[5] = String.valueOf(subTask.getLinkedEpicId());
-            String startTime = "";
-            if (subTask.getStartTime() != null) {
-                startTime = subTask.getStartTime().toString();
-            }
-            line[6] = startTime;
-            String duration = "";
-            if (subTask.getDuration() != null) {
-                duration = subTask.getDuration().toString();
-            }
-            line[7] = duration;
-            String joinedLine = String.join(",", line);
-            subTaskLines.add(joinedLine);
+            setTimeParams(subTaskLines, line, subTask.getStartTime(), subTask.getDuration());
         }
         return subTaskLines;
     }
 
     private List<String> getTasksLines() {
         List<String> taskLines = new ArrayList<>();
-        for (Integer id: taskStorage.keySet()) {
+        for (Map.Entry<Integer, Task> entry: taskStorage.entrySet()) {
             String[] line = new String[8];
-            Task task = taskStorage.get(id);
+            Task task = taskStorage.get(entry.getKey());
             line[0] = String.valueOf(task.getId());
             line[1] = "TASK";
             line[2] = task.getName();
             line[3] = task.getTaskStatus().name();
             line[4] = task.getDescription();
             line[5] = "";
-            String startTime = "";
-            if (task.getStartTime() != null) {
-                startTime = task.getStartTime().toString();
-            }
-            line[6] = startTime;
-            String duration = "";
-            if (task.getDuration() != null) {
-                duration = task.getDuration().toString();
-            }
-            line[7] = duration;
-            String joinedLine = String.join(",", line);
-            taskLines.add(joinedLine);
+            setTimeParams(taskLines, line, task.getStartTime(), task.getDuration());
         }
         return taskLines;
+    }
+
+    private void setTimeParams(List<String> subTaskLines, String[] line, LocalDateTime startTimeToWrite, Duration durationToWrite) {
+        String startTime = "";
+        if (startTimeToWrite != null) {
+            startTime = startTimeToWrite.toString();
+        }
+        line[6] = startTime;
+        String duration = "";
+        if (durationToWrite != null) {
+            duration = durationToWrite.toString();
+        }
+        line[7] = duration;
+        String joinedLine = String.join(",", line);
+        subTaskLines.add(joinedLine);
     }
 
     @Override

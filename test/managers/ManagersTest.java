@@ -1,14 +1,15 @@
 package managers;
 
-import entity.Task;
-import interfaces.TaskManager;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.interfaces.TaskManager;
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.managers.Managers;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class ManagersTest {
+class ManagersTest {
     @Test
     void checkInitializationOfTaskManager() {
         TaskManager taskManager;

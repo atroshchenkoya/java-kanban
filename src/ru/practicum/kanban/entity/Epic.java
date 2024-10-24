@@ -1,8 +1,9 @@
-package entity;
+package ru.practicum.kanban.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Epic extends Task {
 
@@ -46,5 +47,23 @@ public class Epic extends Task {
 
     public void unLinkSubTask(int subTaskId) {
         linkedSubTask.removeIf(x -> x == subTaskId);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Epic epic)) {
+            return false;
+        }
+        if (this.getClass() != o.getClass())
+            return false;
+        return this.getId() == epic.getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.getId());
     }
 }

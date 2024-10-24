@@ -1,16 +1,17 @@
 package managers;
 
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
-import entity.TaskStatus;
-import exceptions.ManagerLoadFromFileException;
-import exceptions.ManagerSaveToFileException;
-import interfaces.TaskManager;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
+import ru.practicum.kanban.exceptions.ManagerLoadFromFileException;
+import ru.practicum.kanban.exceptions.ManagerSaveToFileException;
+import ru.practicum.kanban.interfaces.TaskManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.managers.FileBackedTaskManager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,7 +31,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public class FileBackedTaskManagerTest {
+class FileBackedTaskManagerTest {
 
     static TaskManager fileBackedTaskManager;
 

@@ -1,4 +1,4 @@
-package entity;
+package ru.practicum.kanban.entity;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

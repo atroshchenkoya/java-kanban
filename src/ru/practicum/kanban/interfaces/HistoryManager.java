@@ -1,6 +1,6 @@
-package interfaces;
+package ru.practicum.kanban.interfaces;
 
-import entity.Task;
+import ru.practicum.kanban.entity.Task;
 import java.util.List;
 
 public interface HistoryManager {

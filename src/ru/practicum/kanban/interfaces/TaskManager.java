@@ -1,8 +1,8 @@
-package interfaces;
+package ru.practicum.kanban.interfaces;
 
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
 
 import java.util.List;
 

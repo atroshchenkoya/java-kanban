@@ -1,15 +1,16 @@
 package managers;
 
-import entity.Task;
-import entity.TaskStatus;
-import interfaces.HistoryManager;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
+import ru.practicum.kanban.interfaces.HistoryManager;
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.managers.InMemoryHistoryManager;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InMemoryHistoryManagerTest {
+class InMemoryHistoryManagerTest {
     HistoryManager inMemoryHistoryManager = new InMemoryHistoryManager();
 
     @Test
