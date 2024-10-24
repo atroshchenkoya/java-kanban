@@ -16,12 +16,11 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void addTask(Task task) {
-        if (historyMap.containsKey(task)) {
+        historyMap.computeIfPresent(task, (key, val) -> {
             historyList.remove(task);
-            historyMap.put(task, historyList.linkLast(task));
-            return;
-        }
-        historyMap.put(task, historyList.linkLast(task));
+            return historyList.linkLast(task);
+        });
+        historyMap.computeIfAbsent(task, k -> historyList.linkLast(task));
     }
 
     @Override
