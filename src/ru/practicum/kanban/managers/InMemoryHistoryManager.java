@@ -1,8 +1,8 @@
-package managers;
+package ru.practicum.kanban.managers;
 
-import entity.Task;
-import entity.util.CustomNode;
-import interfaces.HistoryManager;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.util.CustomNode;
+import ru.practicum.kanban.interfaces.HistoryManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -2,11 +2,13 @@ package entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.TaskStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Эпик")
-public class EpicTest {
+class EpicTest {
     @Test
     @DisplayName("Должен быть равен эпику с таким же ID")
     void epicsWithEqualIdShouldBeEqual() {

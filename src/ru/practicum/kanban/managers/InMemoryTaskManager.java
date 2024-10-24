@@ -1,12 +1,12 @@
-package managers;
+package ru.practicum.kanban.managers;
 
-import exceptions.TimeCollisionException;
-import interfaces.HistoryManager;
-import interfaces.TaskManager;
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
-import entity.TaskStatus;
+import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.interfaces.HistoryManager;
+import ru.practicum.kanban.interfaces.TaskManager;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

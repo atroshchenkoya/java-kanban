@@ -1,4 +1,4 @@
-package entity;
+package ru.practicum.kanban.entity;
 
 public enum TaskStatus {
     NEW,

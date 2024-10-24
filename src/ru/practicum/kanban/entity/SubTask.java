@@ -1,7 +1,8 @@
-package entity;
+package ru.practicum.kanban.entity;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class SubTask extends Task {
 
@@ -22,4 +23,21 @@ public class SubTask extends Task {
         return linkedEpicId;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof SubTask subTask)) {
+            return false;
+        }
+        if (this.getClass() != o.getClass())
+            return false;
+        return this.getId() == subTask.getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.getId());
+    }
 }

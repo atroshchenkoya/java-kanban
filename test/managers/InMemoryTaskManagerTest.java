@@ -1,13 +1,14 @@
 package managers;
 
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
-import entity.TaskStatus;
-import exceptions.TimeCollisionException;
-import interfaces.TaskManager;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
+import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.interfaces.TaskManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.managers.Managers;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

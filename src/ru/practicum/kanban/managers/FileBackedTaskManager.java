@@ -1,12 +1,12 @@
-package managers;
+package ru.practicum.kanban.managers;
 
-import entity.Epic;
-import entity.SubTask;
-import entity.Task;
-import entity.TaskStatus;
-import entity.TaskType;
-import exceptions.ManagerLoadFromFileException;
-import exceptions.ManagerSaveToFileException;
+import ru.practicum.kanban.entity.Epic;
+import ru.practicum.kanban.entity.SubTask;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
+import ru.practicum.kanban.entity.TaskType;
+import ru.practicum.kanban.exceptions.ManagerLoadFromFileException;
+import ru.practicum.kanban.exceptions.ManagerSaveToFileException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

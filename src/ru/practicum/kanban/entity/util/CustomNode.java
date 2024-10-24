@@ -1,6 +1,6 @@
-package entity.util;
+package ru.practicum.kanban.entity.util;
 
-import entity.Task;
+import ru.practicum.kanban.entity.Task;
 
 public class CustomNode {
     private final Task task;

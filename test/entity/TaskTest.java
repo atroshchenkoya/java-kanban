@@ -1,10 +1,12 @@
 package entity;
 
 import org.junit.jupiter.api.Test;
+import ru.practicum.kanban.entity.Task;
+import ru.practicum.kanban.entity.TaskStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TaskTest {
+class TaskTest {
     @Test
     void tasksWithEqualIdShouldBeEqual() {
         Task task1;
