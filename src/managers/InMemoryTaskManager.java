@@ -149,11 +149,6 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
-        if (task.getStartTime() == null) {
-            taskStorage.put(task.getId(), task);
-            removeFromSortedSetById(task);
-            return;
-        }
         checkCollisionAndPutInSortedSetForUpdate(task);
         taskStorage.put(task.getId(), task);
     }
@@ -182,11 +177,6 @@ public class InMemoryTaskManager implements TaskManager {
                 subTask.getTaskStatus(),
                 subTaskStorage.get(subTask.getId()).getLinkedEpicId()
         );
-        if (subTask.getStartTime() == null) {
-            removeFromSortedSetById(subTask);
-            putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
-            return;
-        }
         checkCollisionAndPutInSortedSetForUpdate(forUpdateSubTask);
         putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
     }
@@ -237,41 +227,35 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void setEpicCalculableAttributes(Epic epic) {
-        setEpicStartTimeAndEndTimeAndDuration(epic);
-        setEpicStatus(epic);
+        Epic epicWithSetTimeAttributes = setEpicStartTimeAndEndTimeAndDuration(epic);
+        Epic epicWithSetTimeAttributesAndStatus = setEpicStatus(epicWithSetTimeAttributes);
+        epicStorage.put(epic.getId(), epicWithSetTimeAttributesAndStatus);
     }
 
-    private void setEpicStatus(Epic epic) {
+    private Epic setEpicStatus(Epic epic) {
         if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty()) {
             epic.setTaskStatus(TaskStatus.NEW);
-            epicStorage.put(epic.getId(), epic);
-            return;
         }
-        List<Integer> linkedSubTask = epic.getLinkedSubTask();
-        int firstSubTaskId = linkedSubTask.getFirst();
-        TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
-        if (linkedSubTask.stream().anyMatch(x -> subTaskStorage.get(x).getTaskStatus() != firstSubTaskStatus))
-            epic.setTaskStatus(TaskStatus.IN_PROGRESS);
-        else
-            epic.setTaskStatus(firstSubTaskStatus);
-        epicStorage.put(epic.getId(), epic);
+        else {
+            List<Integer> linkedSubTask = epic.getLinkedSubTask();
+            int firstSubTaskId = linkedSubTask.getFirst();
+            TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
+            if (linkedSubTask.stream().anyMatch(x -> subTaskStorage.get(x).getTaskStatus() != firstSubTaskStatus))
+                epic.setTaskStatus(TaskStatus.IN_PROGRESS);
+            else
+                epic.setTaskStatus(firstSubTaskStatus);
+        }
+        return epic;
     }
 
-    private void setEpicStartTimeAndEndTimeAndDuration(Epic epic) {
-        LocalDateTime startEpicTime = epic.getLinkedSubTask().stream()
-                .map(this::getSubTask)
-                .map(Task::getStartTime)
-                .filter(Objects::nonNull)
-                .min(Comparator.naturalOrder()).orElse(null);
-        epic.setStartTime(startEpicTime);
+    private Epic setEpicStartTimeAndEndTimeAndDuration(Epic epic) {
+        calculateAndSetStartEpicTime(epic);
+        calculateAndSetEndEpicTime(epic);
+        calculateAndSetEpicDuration(epic);
+        return epic;
+    }
 
-        LocalDateTime endEpicTime = epic.getLinkedSubTask().stream()
-                .map(this::getSubTask)
-                .map(Task::getEndTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder()).orElse(null);
-        epic.setEndTime(endEpicTime);
-
+    private void calculateAndSetEpicDuration(Epic epic) {
         long epicDurationInMinutes = epic.getLinkedSubTask().stream()
                 .map(this::getSubTask)
                 .map(Task::getDuration)
@@ -280,8 +264,24 @@ public class InMemoryTaskManager implements TaskManager {
                 .sum();
         Duration epicDuration = Duration.ofMinutes(epicDurationInMinutes);
         epic.setDuration(epicDuration);
+    }
 
-        epicStorage.put(epic.getId(), epic);
+    private void calculateAndSetEndEpicTime(Epic epic) {
+        LocalDateTime endEpicTime = epic.getLinkedSubTask().stream()
+                .map(this::getSubTask)
+                .map(Task::getEndTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder()).orElse(null);
+        epic.setEndTime(endEpicTime);
+    }
+
+    private void calculateAndSetStartEpicTime(Epic epic) {
+        LocalDateTime startEpicTime = epic.getLinkedSubTask().stream()
+                .map(this::getSubTask)
+                .map(Task::getStartTime)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElse(null);
+        epic.setStartTime(startEpicTime);
     }
 
     private void removeFromSortedSetById(Task task) {
@@ -296,37 +296,25 @@ public class InMemoryTaskManager implements TaskManager {
         sortedTasksAndSubTasks.add(taskToCreate);
     }
 
-    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToCreate) {
-        if (sortedTasksAndSubTasks.contains(taskToCreate)) {
-            checkCollisionAndDoTransactionalLogicOnEqualTime(taskToCreate);
+    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToUpdate) {
+        Task oldTask = taskStorage.get(taskToUpdate.getId());
+        removeFromSortedSetById(oldTask);
+        if (taskToUpdate.getStartTime() == null)
             return;
-        }
-        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.equals(taskToCreate))) {
-            checkCollisionAndDoTransactionalLogicOnEqualTaskId(taskToCreate);
-            return;
-        }
-        if (checkTimeCollision(taskToCreate))
-            throw new TimeCollisionException("Time collision on update!!!");
-        sortedTasksAndSubTasks.add(taskToCreate);
-    }
-
-    private void checkCollisionAndDoTransactionalLogicOnEqualTaskId(Task taskToCreate) {
-        Task previousTask = sortedTasksAndSubTasks.stream()
-                .filter(x -> x.equals(taskToCreate))
-                .findFirst()
-                .orElse(null);
-        sortedTasksAndSubTasks.remove(previousTask);
-        if (checkTimeCollision(taskToCreate)) {
-            sortedTasksAndSubTasks.add(previousTask);
+        checkOnEqualStartTime(taskToUpdate, oldTask);
+        sortedTasksAndSubTasks.add(taskToUpdate);
+        if (checkTimeCollision(taskToUpdate)) {
+            sortedTasksAndSubTasks.remove(taskToUpdate);
+            sortedTasksAndSubTasks.add(oldTask);
             throw new TimeCollisionException("Time collision on update!!!");
         }
-        sortedTasksAndSubTasks.add(taskToCreate);
     }
 
-    private void checkCollisionAndDoTransactionalLogicOnEqualTime(Task taskToCreate) {
-        if (checkTimeCollision(taskToCreate) || sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime())))
-            throw new TimeCollisionException("Time collision on update (equal start time)!!!");
-        sortedTasksAndSubTasks.add(taskToCreate);
+    private void checkOnEqualStartTime(Task taskToUpdate, Task oldTask) {
+        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToUpdate.getStartTime()))) {
+            sortedTasksAndSubTasks.add(oldTask);
+            throw new TimeCollisionException("Time collision on update - equal start time!!!");
+        }
     }
 
     private boolean checkTimeCollision(Task task) {
