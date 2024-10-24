@@ -235,8 +235,7 @@ public class InMemoryTaskManager implements TaskManager {
     private Epic setEpicStatus(Epic epic) {
         if (epic.getLinkedSubTask() == null || epic.getLinkedSubTask().isEmpty()) {
             epic.setTaskStatus(TaskStatus.NEW);
-        }
-        else {
+        } else {
             List<Integer> linkedSubTask = epic.getLinkedSubTask();
             int firstSubTaskId = linkedSubTask.getFirst();
             TaskStatus firstSubTaskStatus = subTaskStorage.get(firstSubTaskId).getTaskStatus();
