@@ -63,7 +63,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private void setLoadedEpicStatusAndTime() {
-        epicStorage.values().forEach(this::setEpicCalculableAttributes);
+        epicStorage.values().forEach(this::setEpicCalculableAttributesAndSaveEpicInStorage);
     }
 
     private void linkLoadedSubTasksToTheirEpics() {

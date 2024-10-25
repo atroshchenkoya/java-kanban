@@ -53,6 +53,7 @@ public class InMemoryTaskManager implements TaskManager {
         for (Epic epic : epicStorage.values()) {
             epic.setTaskStatus(TaskStatus.NEW);
             epic.unLinkAllSubTask();
+            setEpicCalculableAttributesAndSaveEpicInStorage(epic);
         }
     }
 
@@ -130,7 +131,7 @@ public class InMemoryTaskManager implements TaskManager {
         int epicId = subTaskToCreate.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
         epic.linkSubTask(subTaskToCreate.getId());
-        setEpicCalculableAttributes(epic);
+        setEpicCalculableAttributesAndSaveEpicInStorage(epic);
     }
 
     @Override
@@ -165,7 +166,7 @@ public class InMemoryTaskManager implements TaskManager {
 
         forUpdateEpic.linkSubTask(epicStorage.get(incomingEpic.getId()).getLinkedSubTask());
         epicStorage.put(forUpdateEpic.getId(), forUpdateEpic);
-        setEpicCalculableAttributes(forUpdateEpic);
+        setEpicCalculableAttributesAndSaveEpicInStorage(forUpdateEpic);
     }
 
     @Override
@@ -193,7 +194,7 @@ public class InMemoryTaskManager implements TaskManager {
         int epicId = subTaskStorage.get(id).getLinkedEpicId();
         Epic linkedEpic = epicStorage.get(epicId);
         linkedEpic.unLinkSubTask(id);
-        setEpicCalculableAttributes(linkedEpic);
+        setEpicCalculableAttributesAndSaveEpicInStorage(linkedEpic);
         subTaskStorage.remove(id);
     }
 
@@ -223,10 +224,10 @@ public class InMemoryTaskManager implements TaskManager {
         subTaskStorage.put(forUpdateSubTask.getId(), forUpdateSubTask);
         int epicId = forUpdateSubTask.getLinkedEpicId();
         Epic epic = epicStorage.get(epicId);
-        setEpicCalculableAttributes(epic);
+        setEpicCalculableAttributesAndSaveEpicInStorage(epic);
     }
 
-    protected void setEpicCalculableAttributes(Epic epic) {
+    protected void setEpicCalculableAttributesAndSaveEpicInStorage(Epic epic) {
         Epic epicWithSetTimeAttributes = setEpicStartTimeAndEndTimeAndDuration(epic);
         Epic epicWithSetTimeAttributesAndStatus = setEpicStatus(epicWithSetTimeAttributes);
         epicStorage.put(epic.getId(), epicWithSetTimeAttributesAndStatus);
