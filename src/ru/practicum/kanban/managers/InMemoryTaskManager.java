@@ -291,6 +291,9 @@ public class InMemoryTaskManager implements TaskManager {
     private void checkCollisionAndPutInSortedSetForCreate(Task taskToCreate) {
         if (taskToCreate.getStartTime() == null)
             return;
+        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime()))) {
+            throw new TimeCollisionException("Time collision on create - equal start time!!!");
+        }
         if (checkTimeCollision(taskToCreate))
             throw new TimeCollisionException("Time collision on create!!!");
         sortedTasksAndSubTasks.add(taskToCreate);
