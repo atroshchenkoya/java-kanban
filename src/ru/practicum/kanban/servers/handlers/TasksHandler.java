@@ -1,19 +1,12 @@
 package ru.practicum.kanban.servers.handlers;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import ru.practicum.kanban.entity.Task;
 import ru.practicum.kanban.exceptions.TimeCollisionException;
 import ru.practicum.kanban.interfaces.TaskManager;
-import ru.practicum.kanban.servers.handlers.adapters.DurationAdapter;
-import ru.practicum.kanban.servers.handlers.adapters.LocalDateTimeAdapter;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class TasksHandler extends BaseHttpHandler implements HttpHandler {
@@ -31,7 +24,7 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
                 handleGetTasks(exchange);
                 break;
             case GET_TASK_BY_ID:
-                handleGetTasksById(exchange);
+                handleGetTaskById(exchange);
                 break;
             case CREATE_TASK:
                 handleCreateTask(exchange);
@@ -53,7 +46,6 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
 
         Gson gson = getPreparedGson();
         String json = gson.toJson(taskList);
-        System.out.println(json);
         sendText(exchange, json, 200);
     }
 
@@ -84,7 +76,8 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
         try {
             taskManager.updateTask(taskToUpdate);
         } catch (TimeCollisionException e) {
-            sendText(exchange, e.getMessage(), 400);
+            sendText(exchange, e.getMessage(), 406);
+            return;
         }
         sendText(exchange, "Task successfully updated.", 201);
     }
@@ -94,30 +87,16 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
         Gson gson = getPreparedGson();
 
         Task task = gson.fromJson(requestBody, Task.class);
-        if (taskManager.getTask(task.getId()) != null) {
-            sendText(exchange, "Task with same id already exists! Try another ID", 400);
-            return;
-        }
         try {
             taskManager.createTask(task);
         } catch (TimeCollisionException e) {
-            sendText(exchange, e.getMessage(), 400);
+            sendText(exchange, e.getMessage(), 406);
+            return;
         }
-
         sendText(exchange, "", 201);
     }
 
-    private static String getRequestBodyAsString(HttpExchange exchange) {
-        String requestBody;
-        try {
-            requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return requestBody;
-    }
-
-    private void handleGetTasksById(HttpExchange exchange) {
+    private void handleGetTaskById(HttpExchange exchange) {
         Integer taskId = getIdIfTaskExists(exchange);
         if (taskId == null)
             return;
@@ -125,14 +104,6 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
 
         String json = gson.toJson(taskManager.getTask(taskId));
         sendText(exchange, json, 200);
-
-    }
-
-    private static Gson getPreparedGson() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Duration.class, new DurationAdapter());
-        gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter());
-        return gsonBuilder.create();
     }
 
     private Integer getIdIfTaskExists(HttpExchange exchange) {
