@@ -150,7 +150,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
-        checkCollisionAndPutInSortedSetForUpdate(task);
+        checkCollisionAndPutInSortedSetForUpdateTask(task);
         taskStorage.put(task.getId(), task);
     }
 
@@ -176,9 +176,11 @@ public class InMemoryTaskManager implements TaskManager {
                 subTask.getName(),
                 subTask.getDescription(),
                 subTask.getTaskStatus(),
-                subTaskStorage.get(subTask.getId()).getLinkedEpicId()
+                subTaskStorage.get(subTask.getId()).getLinkedEpicId(),
+                subTask.getStartTime(),
+                subTask.getDuration()
         );
-        checkCollisionAndPutInSortedSetForUpdate(forUpdateSubTask);
+        checkCollisionAndPutInSortedSetForUpdateSubTask(forUpdateSubTask);
         putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
     }
 
@@ -299,8 +301,17 @@ public class InMemoryTaskManager implements TaskManager {
         sortedTasksAndSubTasks.add(taskToCreate);
     }
 
-    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToUpdate) {
+    private void checkCollisionAndPutInSortedSetForUpdateSubTask(SubTask subTaskToUpdate) {
+        SubTask oldSubTask = subTaskStorage.get(subTaskToUpdate.getId());
+        checkCollisionAndPutInSortedSetForUpdateCommon(subTaskToUpdate, oldSubTask);
+    }
+
+    private void checkCollisionAndPutInSortedSetForUpdateTask(Task taskToUpdate) {
         Task oldTask = taskStorage.get(taskToUpdate.getId());
+        checkCollisionAndPutInSortedSetForUpdateCommon(taskToUpdate, oldTask);
+    }
+
+    private void checkCollisionAndPutInSortedSetForUpdateCommon(Task taskToUpdate, Task oldTask) {
         removeFromSortedSetById(oldTask);
         if (taskToUpdate.getStartTime() == null)
             return;
