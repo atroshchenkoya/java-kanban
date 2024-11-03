@@ -35,7 +35,7 @@ public class BaseHttpHandler {
         h.close();
     }
 
-    protected static Gson getPreparedGson() {
+    public static Gson getPreparedGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Duration.class, new DurationAdapter());
         gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter());
