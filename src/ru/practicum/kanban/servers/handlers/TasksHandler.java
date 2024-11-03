@@ -18,7 +18,7 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) {
         EndPoint endpoint = getEndPoint(exchange.getRequestURI().getPath(), exchange.getRequestMethod());
-        
+
         switch (endpoint) {
             case GET_TASKS:
                 handleGetTasks(exchange);
@@ -35,10 +35,8 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
             case DELETE_TASK:
                 handleDeleteTask(exchange);
                 break;
-            default: 
-                sendText(exchange, "This endpoint is not supported.", 400);
+            default: sendText(exchange, "This endpoint is not supported.", 400);
         }
-        
     }
 
     private void handleGetTasks(HttpExchange exchange) {
