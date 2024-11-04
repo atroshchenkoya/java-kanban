@@ -41,7 +41,7 @@ class TasksHandlerTest {
     }
 
     @Test
-    void testAddTask() throws IOException, InterruptedException {
+    void correctAddTaskShouldReturn201() throws IOException, InterruptedException {
         Task task = new Task(0, "Test 2", "Testing task 2",
                 TaskStatus.NEW, LocalDateTime.now(), Duration.ofMinutes(5));
         String taskJson = gson.toJson(task);
@@ -51,7 +51,10 @@ class TasksHandlerTest {
                 .uri(url)
                 .POST(HttpRequest.BodyPublishers.ofString(taskJson))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response;
+        try (client) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
         client.close();
         assertEquals(201, response.statusCode());
     }
