@@ -19,7 +19,7 @@ public class PrioritizedHandler extends BaseHttpHandler implements HttpHandler {
         if (endpoint == EndPoint.GET_PRIORITIZED_TASK)
             handleGetPrioritized(exchange);
         else
-            sendText(exchange, "This endpoint is not supported.", 400);
+            sendText(exchange, "This endpoint is not supported.", 404);
     }
 
     private void handleGetPrioritized(HttpExchange exchange) {

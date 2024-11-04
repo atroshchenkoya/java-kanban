@@ -19,7 +19,7 @@ public class HistoryHandler extends BaseHttpHandler implements HttpHandler {
         if (endpoint == EndPoint.GET_HISTORY)
             handleGetHistory(exchange);
         else
-            sendText(exchange, "This endpoint is not supported.", 400);
+            sendText(exchange, "This endpoint is not supported.", 404);
     }
 
     private void handleGetHistory(HttpExchange exchange) {

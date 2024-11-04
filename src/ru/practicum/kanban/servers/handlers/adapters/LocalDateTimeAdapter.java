@@ -22,6 +22,10 @@ public class LocalDateTimeAdapter extends TypeAdapter<LocalDateTime> {
 
     @Override
     public LocalDateTime read(JsonReader in) throws IOException {
-        return LocalDateTime.parse(in.nextString(), formatter);
+        String dateTimeString = in.nextString();
+        if (dateTimeString == null || dateTimeString.trim().isEmpty()) {
+            return null;
+        }
+        return LocalDateTime.parse(dateTimeString, formatter);
     }
 }

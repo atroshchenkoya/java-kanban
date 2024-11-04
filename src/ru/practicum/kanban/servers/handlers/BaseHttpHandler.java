@@ -21,18 +21,17 @@ public class BaseHttpHandler {
         this.taskManager = taskManager;
     }
 
-    protected void sendText(HttpExchange h, String text, int responseCode) {
+    protected void sendText(HttpExchange httpExchange, String text, int responseCode) {
         byte[] resp = text.getBytes(StandardCharsets.UTF_8);
-        h.getResponseHeaders().add("Content-Type", "application/json;charset=utf-8");
-        try {
-            h.sendResponseHeaders(responseCode, resp.length);
+        httpExchange.getResponseHeaders().add("Content-Type", "application/json;charset=utf-8");
+        try (httpExchange) {
+            httpExchange.sendResponseHeaders(responseCode, resp.length);
             if (!text.isEmpty()) {
-                h.getResponseBody().write(resp);
+                httpExchange.getResponseBody().write(resp);
             }
         } catch (IOException e) {
             throw new HttpExchangeException(e);
         }
-        h.close();
     }
 
     public static Gson getPreparedGson() {

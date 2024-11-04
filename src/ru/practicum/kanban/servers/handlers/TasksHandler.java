@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import ru.practicum.kanban.entity.Task;
 import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.TaskNotFoundException;
 import ru.practicum.kanban.interfaces.TaskManager;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
             case DELETE_TASK:
                 handleDeleteTask(exchange);
                 break;
-            default: sendText(exchange, "This endpoint is not supported.", 400);
+            default: sendText(exchange, "This endpoint is not supported.", 404);
         }
     }
 
@@ -48,17 +49,18 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
     }
 
     private void handleDeleteTask(HttpExchange exchange) {
-        Integer taskId = getIdIfTaskExists(exchange);
-        if (taskId == null)
+        int taskId = getTaskIdFromPath(exchange);
+        try {
+            taskManager.removeTask(taskId);
+        } catch (TaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
-        taskManager.removeTask(taskId);
+        }
         sendText(exchange, "Task successfully deleted.", 200);
     }
 
     private void handleUpdateTask(HttpExchange exchange) {
-        Integer taskId = getIdIfTaskExists(exchange);
-        if (taskId == null)
-            return;
+        int taskId = getTaskIdFromPath(exchange);
         Gson gson = getPreparedGson();
 
         String requestBody = getRequestBodyAsString(exchange);
@@ -75,6 +77,9 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
             taskManager.updateTask(taskToUpdate);
         } catch (TimeCollisionException e) {
             sendText(exchange, e.getMessage(), 406);
+            return;
+        } catch (TaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
         }
         sendText(exchange, "Task successfully updated.", 201);
@@ -95,24 +100,23 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
     }
 
     private void handleGetTaskById(HttpExchange exchange) {
-        Integer taskId = getIdIfTaskExists(exchange);
-        if (taskId == null)
-            return;
+        int taskId = getTaskIdFromPath(exchange);
         Gson gson = getPreparedGson();
-
-        String json = gson.toJson(taskManager.getTask(taskId));
+        Task task;
+        try {
+            task = taskManager.getTask(taskId);
+        } catch (TaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
+            return;
+        }
+        String json = gson.toJson(task);
         sendText(exchange, json, 200);
     }
 
-    private Integer getIdIfTaskExists(HttpExchange exchange) {
+    private int getTaskIdFromPath(HttpExchange exchange) {
         String requestPath = exchange.getRequestURI().getPath();
         String[] pathParts = requestPath.split("/");
-        int taskId = Integer.parseInt(pathParts[pathParts.length - 1]);
-        if (taskManager.getTask(taskId) == null) {
-            sendText(exchange, "Task not found.", 400);
-            return null;
-        }
-        return taskId;
+        return Integer.parseInt(pathParts[pathParts.length - 1]);
     }
 
     private EndPoint getEndPoint(String requestPath, String requestMethod) {

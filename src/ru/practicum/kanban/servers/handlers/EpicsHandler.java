@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import ru.practicum.kanban.entity.Epic;
 import ru.practicum.kanban.entity.SubTask;
 import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.EpicNotFoundException;
 import ru.practicum.kanban.interfaces.TaskManager;
 
 import java.util.List;
@@ -40,46 +41,43 @@ public class EpicsHandler extends BaseHttpHandler implements HttpHandler {
                 handleGetSubTasksByEpicId(exchange);
                 break;
             default:
-                sendText(exchange, "This endpoint is not supported.", 400);
+                sendText(exchange, "This endpoint is not supported.", 404);
         }
     }
 
     private void handleGetSubTasksByEpicId(HttpExchange exchange) {
-        Integer epicId = getIdIfEpicExistsForGetSubTasks(exchange);
-        if (epicId == null)
+        int epicId = getEpicIdFromPathForGetSubTasks(exchange);
+        List<SubTask> subTasks;
+        try {
+            subTasks = taskManager.getAllSubTask(epicId);
+        } catch (EpicNotFoundException e) {
+            sendText(exchange, "No such epic exists", 404);
             return;
-        Epic epic = taskManager.getEpic(epicId);
-        List<SubTask> subTasks = taskManager.getAllSubTask(epic);
-
+        }
         Gson gson = getPreparedGson();
         String json = gson.toJson(subTasks);
         sendText(exchange, json, 200);
-
     }
 
-    private Integer getIdIfEpicExistsForGetSubTasks(HttpExchange exchange) {
+    private int getEpicIdFromPathForGetSubTasks(HttpExchange exchange) {
         String requestPath = exchange.getRequestURI().getPath();
         String[] pathParts = requestPath.split("/");
-        int epicId = Integer.parseInt(pathParts[pathParts.length - 2]);
-        if (taskManager.getEpic(epicId) == null) {
-            sendText(exchange, "Epic not found.", 400);
-            return null;
-        }
-        return epicId;
+        return Integer.parseInt(pathParts[pathParts.length - 2]);
     }
 
     private void handleDeleteEpic(HttpExchange exchange) {
-        Integer epicId = getIdIfEpicExists(exchange);
-        if (epicId == null)
+        int epicId = getEpicIdFromPath(exchange);
+        try {
+            taskManager.removeEpic(epicId);
+        } catch (EpicNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
-        taskManager.removeEpic(epicId);
+        }
         sendText(exchange, "Epic successfully deleted.", 200);
     }
 
     private void handleUpdateEpic(HttpExchange exchange) {
-        Integer epicId = getIdIfEpicExists(exchange);
-        if (epicId == null)
-            return;
+        int epicId = getEpicIdFromPath(exchange);
         Gson gson = getPreparedGson();
 
         String requestBody = getRequestBodyAsString(exchange);
@@ -94,6 +92,9 @@ public class EpicsHandler extends BaseHttpHandler implements HttpHandler {
             taskManager.updateEpic(epicToUpdate);
         } catch (TimeCollisionException e) {
             sendText(exchange, e.getMessage(), 406);
+            return;
+        } catch (EpicNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
         }
         sendText(exchange, "Epic successfully updated.", 201);
@@ -114,12 +115,16 @@ public class EpicsHandler extends BaseHttpHandler implements HttpHandler {
     }
 
     private void handleGetEpicById(HttpExchange exchange) {
-        Integer epicId = getIdIfEpicExists(exchange);
-        if (epicId == null)
-            return;
+        int epicId = getEpicIdFromPath(exchange);
         Gson gson = getPreparedGson();
-
-        String json = gson.toJson(taskManager.getEpic(epicId));
+        Epic epic;
+        try {
+            epic = taskManager.getEpic(epicId);
+        } catch (EpicNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
+            return;
+        }
+        String json = gson.toJson(epic);
         sendText(exchange, json, 200);
     }
 
@@ -130,15 +135,10 @@ public class EpicsHandler extends BaseHttpHandler implements HttpHandler {
         sendText(exchange, json, 200);
     }
 
-    private Integer getIdIfEpicExists(HttpExchange exchange) {
+    private int getEpicIdFromPath(HttpExchange exchange) {
         String requestPath = exchange.getRequestURI().getPath();
         String[] pathParts = requestPath.split("/");
-        int epicId = Integer.parseInt(pathParts[pathParts.length - 1]);
-        if (taskManager.getEpic(epicId) == null) {
-            sendText(exchange, "Epic not found.", 400);
-            return null;
-        }
-        return epicId;
+        return Integer.parseInt(pathParts[pathParts.length - 1]);
     }
 
     private EndPoint getEndPoint(String requestPath, String requestMethod) {

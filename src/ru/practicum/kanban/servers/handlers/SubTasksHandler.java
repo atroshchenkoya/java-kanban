@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import ru.practicum.kanban.entity.SubTask;
 import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.SubTaskNotFoundException;
 import ru.practicum.kanban.interfaces.TaskManager;
 
 import java.util.List;
@@ -37,36 +38,25 @@ public class SubTasksHandler extends BaseHttpHandler implements HttpHandler {
                 handleDeleteSubTask(exchange);
                 break;
             default:
-                sendText(exchange, "This endpoint is not supported.", 400);
+                sendText(exchange, "This endpoint is not supported.", 404);
         }
 
     }
 
     private void handleDeleteSubTask(HttpExchange exchange) {
-        Integer subTaskId = getIdIfSubTaskExists(exchange);
-        if (subTaskId == null)
+        int subTaskId = getSubTaskIdFromPath(exchange);
+        try {
+            taskManager.removeSubTask(subTaskId);
+        } catch (SubTaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
-        taskManager.removeSubTask(subTaskId);
+        }
         sendText(exchange, "SubTask successfully deleted.", 200);
     }
 
-    private Integer getIdIfSubTaskExists(HttpExchange exchange) {
-        String requestPath = exchange.getRequestURI().getPath();
-        String[] pathParts = requestPath.split("/");
-        int subTaskId = Integer.parseInt(pathParts[pathParts.length - 1]);
-        if (taskManager.getSubTask(subTaskId) == null) {
-            sendText(exchange, "Task not found.", 400);
-            return null;
-        }
-        return subTaskId;
-    }
-
     private void handleUpdateSubTask(HttpExchange exchange) {
-        Integer subTaskId = getIdIfSubTaskExists(exchange);
-        if (subTaskId == null)
-            return;
+        int subTaskId = getSubTaskIdFromPath(exchange);
         Gson gson = getPreparedGson();
-
         String requestBody = getRequestBodyAsString(exchange);
         SubTask subTask = gson.fromJson(requestBody, SubTask.class);
         SubTask subTaskToUpdate = new SubTask(
@@ -82,6 +72,9 @@ public class SubTasksHandler extends BaseHttpHandler implements HttpHandler {
             taskManager.updateSubTask(subTaskToUpdate);
         } catch (TimeCollisionException e) {
             sendText(exchange, e.getMessage(), 406);
+            return;
+        } catch (SubTaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
             return;
         }
         sendText(exchange, "SubTask successfully updated.", 201);
@@ -102,12 +95,16 @@ public class SubTasksHandler extends BaseHttpHandler implements HttpHandler {
     }
 
     private void handleGetSubTaskById(HttpExchange exchange) {
-        Integer subTaskId = getIdIfSubTaskExists(exchange);
-        if (subTaskId == null)
-            return;
+        int subTaskId = getSubTaskIdFromPath(exchange);
         Gson gson = getPreparedGson();
-
-        String json = gson.toJson(taskManager.getSubTask(subTaskId));
+        SubTask subTask;
+        try {
+            subTask = taskManager.getSubTask(subTaskId);
+        } catch (SubTaskNotFoundException e) {
+            sendText(exchange, e.getMessage(), 404);
+            return;
+        }
+        String json = gson.toJson(subTask);
         sendText(exchange, json, 200);
     }
 
@@ -117,6 +114,12 @@ public class SubTasksHandler extends BaseHttpHandler implements HttpHandler {
         Gson gson = getPreparedGson();
         String json = gson.toJson(subTaskList);
         sendText(exchange, json, 200);
+    }
+
+    private int getSubTaskIdFromPath(HttpExchange exchange) {
+        String requestPath = exchange.getRequestURI().getPath();
+        String[] pathParts = requestPath.split("/");
+        return Integer.parseInt(pathParts[pathParts.length - 1]);
     }
 
     private EndPoint getEndPoint(String requestPath, String requestMethod) {
