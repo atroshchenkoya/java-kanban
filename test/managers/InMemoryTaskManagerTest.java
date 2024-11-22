@@ -42,7 +42,7 @@ class InMemoryTaskManagerTest {
         taskManager.createEpic(epic1);
         taskManager.createSubTask(subtask1);
 
-        assertTrue(taskManager.getAllSubTask(epic1).contains(subtask1));
+        assertTrue(taskManager.getAllSubTask(epic1.getId()).contains(subtask1));
     }
 
     @Test

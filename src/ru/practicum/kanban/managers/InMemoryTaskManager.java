@@ -1,6 +1,9 @@
 package ru.practicum.kanban.managers;
 
 import ru.practicum.kanban.exceptions.TimeCollisionException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.EpicNotFoundException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.SubTaskNotFoundException;
+import ru.practicum.kanban.exceptions.not_found_exceptions.TaskNotFoundException;
 import ru.practicum.kanban.interfaces.HistoryManager;
 import ru.practicum.kanban.interfaces.TaskManager;
 import ru.practicum.kanban.entity.Epic;
@@ -19,6 +22,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected final TreeSet<Task> sortedTasksAndSubTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime));
     private final HistoryManager historyManager = Managers.getDefaultHistory();
     protected int idCounter = 0;
+    private static final String NOT_FOUND_STRING = " not found";
 
     @Override
     public List<Task> getAllTask() {
@@ -70,27 +74,21 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task getTask(int id) {
-        Task task = taskStorage.get(id);
-        if (task == null)
-            return null;
+        Task task = checkIfTaskExists(id);
         historyManager.addTask(task);
         return task;
     }
 
     @Override
     public SubTask getSubTask(int id) {
-        SubTask subTask = subTaskStorage.get(id);
-        if (subTask == null)
-            return null;
+        SubTask subTask = checkIfSubTaskExists(id);
         historyManager.addTask(subTask);
         return subTask;
     }
 
     @Override
     public Epic getEpic(int id) {
-        Epic epic = epicStorage.get(id);
-        if (epic == null)
-            return null;
+        Epic epic = checkIfEpicExists(id);
         historyManager.addTask(epic);
         return epic;
     }
@@ -150,13 +148,14 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
-        checkCollisionAndPutInSortedSetForUpdate(task);
+        checkIfTaskExists(task.getId());
+        checkCollisionAndPutInSortedSetForUpdateTask(task);
         taskStorage.put(task.getId(), task);
     }
 
     @Override
     public void updateEpic(Epic incomingEpic) {
-
+        checkIfEpicExists(incomingEpic.getId());
         Epic forUpdateEpic = new Epic(
                 incomingEpic.getId(),
                 incomingEpic.getName(),
@@ -171,25 +170,30 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateSubTask(SubTask subTask) {
+        checkIfSubTaskExists(subTask.getId());
         SubTask forUpdateSubTask = new SubTask(
                 subTask.getId(),
                 subTask.getName(),
                 subTask.getDescription(),
                 subTask.getTaskStatus(),
-                subTaskStorage.get(subTask.getId()).getLinkedEpicId()
+                subTaskStorage.get(subTask.getId()).getLinkedEpicId(),
+                subTask.getStartTime(),
+                subTask.getDuration()
         );
-        checkCollisionAndPutInSortedSetForUpdate(forUpdateSubTask);
+        checkCollisionAndPutInSortedSetForUpdateSubTask(forUpdateSubTask);
         putInTaskStorageAndSetLinkedEpicAttributes(forUpdateSubTask);
     }
 
     @Override
     public void removeTask(int id) {
+        checkIfTaskExists(id);
         sortedTasksAndSubTasks.remove(taskStorage.get(id));
         taskStorage.remove(id);
     }
 
     @Override
     public void removeSubTask(int id) {
+        checkIfSubTaskExists(id);
         sortedTasksAndSubTasks.remove(subTaskStorage.get(id));
         int epicId = subTaskStorage.get(id).getLinkedEpicId();
         Epic linkedEpic = epicStorage.get(epicId);
@@ -200,15 +204,16 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeEpic(int id) {
+        checkIfEpicExists(id);
         epicStorage.get(id).getLinkedSubTask().forEach(x -> sortedTasksAndSubTasks.remove(subTaskStorage.get(x)));
         epicStorage.get(id).getLinkedSubTask().forEach(subTaskStorage::remove);
         epicStorage.remove(id);
     }
 
     @Override
-    public List<SubTask> getAllSubTask(Epic epic) {
+    public List<SubTask> getAllSubTask(int epicId) {
+        Epic storagedEpic = checkIfEpicExists(epicId);
         List<SubTask> subTasksForEpic = new ArrayList<>();
-        Epic storagedEpic = epicStorage.get(epic.getId());
         if (storagedEpic.getLinkedSubTask() == null || storagedEpic.getLinkedSubTask().isEmpty())
             return subTasksForEpic;
         storagedEpic.getLinkedSubTask().forEach(x -> subTasksForEpic.add(subTaskStorage.get(x)));
@@ -291,13 +296,25 @@ public class InMemoryTaskManager implements TaskManager {
     private void checkCollisionAndPutInSortedSetForCreate(Task taskToCreate) {
         if (taskToCreate.getStartTime() == null)
             return;
+        if (sortedTasksAndSubTasks.stream().anyMatch(x -> x.getStartTime().equals(taskToCreate.getStartTime()))) {
+            throw new TimeCollisionException("Time collision on create - equal start time!!!");
+        }
         if (checkTimeCollision(taskToCreate))
             throw new TimeCollisionException("Time collision on create!!!");
         sortedTasksAndSubTasks.add(taskToCreate);
     }
 
-    private void checkCollisionAndPutInSortedSetForUpdate(Task taskToUpdate) {
+    private void checkCollisionAndPutInSortedSetForUpdateSubTask(SubTask subTaskToUpdate) {
+        SubTask oldSubTask = subTaskStorage.get(subTaskToUpdate.getId());
+        checkCollisionAndPutInSortedSetForUpdateCommon(subTaskToUpdate, oldSubTask);
+    }
+
+    private void checkCollisionAndPutInSortedSetForUpdateTask(Task taskToUpdate) {
         Task oldTask = taskStorage.get(taskToUpdate.getId());
+        checkCollisionAndPutInSortedSetForUpdateCommon(taskToUpdate, oldTask);
+    }
+
+    private void checkCollisionAndPutInSortedSetForUpdateCommon(Task taskToUpdate, Task oldTask) {
         removeFromSortedSetById(oldTask);
         if (taskToUpdate.getStartTime() == null)
             return;
@@ -325,5 +342,29 @@ public class InMemoryTaskManager implements TaskManager {
                 .map(Task::getStartTime)
                 .orElse(LocalDateTime.MAX);
         return closestEndTime.isAfter(task.getStartTime()) || task.getEndTime().isAfter(closestStartTime);
+    }
+
+    private Task checkIfTaskExists(int id) {
+        Task task = taskStorage.get(id);
+        if (task == null) {
+            throw new TaskNotFoundException("Task with id: " + id + NOT_FOUND_STRING);
+        }
+        return task;
+    }
+
+    private SubTask checkIfSubTaskExists(int id) {
+        SubTask subTask = subTaskStorage.get(id);
+        if (subTask == null) {
+            throw new SubTaskNotFoundException("SubTask with id: " + id + NOT_FOUND_STRING);
+        }
+        return subTask;
+    }
+
+    private Epic checkIfEpicExists(int id) {
+        Epic epic = epicStorage.get(id);
+        if (epic == null) {
+            throw new EpicNotFoundException("Epic with id: " + id + NOT_FOUND_STRING);
+        }
+        return epic;
     }
 }
